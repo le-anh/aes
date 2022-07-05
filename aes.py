@@ -142,3 +142,6 @@ c = bytes(16)
 
 # key_expand = expand_key(k)
 # print(key_expand)
+
+for r in range(10, 0, -1):
+    print(r)

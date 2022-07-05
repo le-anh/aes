@@ -1,4 +1,7 @@
 from random import random
+from xml.etree.ElementInclude import XINCLUDE
+
+from numpy import block
 BLOCK_SIZE = 16 # 16 bytes <==> 128 bits
 
 s_box = (
@@ -20,6 +23,25 @@ s_box = (
     0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16,
 )
 
+inv_s_box = (
+    0x52, 0x09, 0x6A, 0xD5, 0x30, 0x36, 0xA5, 0x38, 0xBF, 0x40, 0xA3, 0x9E, 0x81, 0xF3, 0xD7, 0xFB,
+    0x7C, 0xE3, 0x39, 0x82, 0x9B, 0x2F, 0xFF, 0x87, 0x34, 0x8E, 0x43, 0x44, 0xC4, 0xDE, 0xE9, 0xCB,
+    0x54, 0x7B, 0x94, 0x32, 0xA6, 0xC2, 0x23, 0x3D, 0xEE, 0x4C, 0x95, 0x0B, 0x42, 0xFA, 0xC3, 0x4E,
+    0x08, 0x2E, 0xA1, 0x66, 0x28, 0xD9, 0x24, 0xB2, 0x76, 0x5B, 0xA2, 0x49, 0x6D, 0x8B, 0xD1, 0x25,
+    0x72, 0xF8, 0xF6, 0x64, 0x86, 0x68, 0x98, 0x16, 0xD4, 0xA4, 0x5C, 0xCC, 0x5D, 0x65, 0xB6, 0x92,
+    0x6C, 0x70, 0x48, 0x50, 0xFD, 0xED, 0xB9, 0xDA, 0x5E, 0x15, 0x46, 0x57, 0xA7, 0x8D, 0x9D, 0x84,
+    0x90, 0xD8, 0xAB, 0x00, 0x8C, 0xBC, 0xD3, 0x0A, 0xF7, 0xE4, 0x58, 0x05, 0xB8, 0xB3, 0x45, 0x06,
+    0xD0, 0x2C, 0x1E, 0x8F, 0xCA, 0x3F, 0x0F, 0x02, 0xC1, 0xAF, 0xBD, 0x03, 0x01, 0x13, 0x8A, 0x6B,
+    0x3A, 0x91, 0x11, 0x41, 0x4F, 0x67, 0xDC, 0xEA, 0x97, 0xF2, 0xCF, 0xCE, 0xF0, 0xB4, 0xE6, 0x73,
+    0x96, 0xAC, 0x74, 0x22, 0xE7, 0xAD, 0x35, 0x85, 0xE2, 0xF9, 0x37, 0xE8, 0x1C, 0x75, 0xDF, 0x6E,
+    0x47, 0xF1, 0x1A, 0x71, 0x1D, 0x29, 0xC5, 0x89, 0x6F, 0xB7, 0x62, 0x0E, 0xAA, 0x18, 0xBE, 0x1B,
+    0xFC, 0x56, 0x3E, 0x4B, 0xC6, 0xD2, 0x79, 0x20, 0x9A, 0xDB, 0xC0, 0xFE, 0x78, 0xCD, 0x5A, 0xF4,
+    0x1F, 0xDD, 0xA8, 0x33, 0x88, 0x07, 0xC7, 0x31, 0xB1, 0x12, 0x10, 0x59, 0x27, 0x80, 0xEC, 0x5F,
+    0x60, 0x51, 0x7F, 0xA9, 0x19, 0xB5, 0x4A, 0x0D, 0x2D, 0xE5, 0x7A, 0x9F, 0x93, 0xC9, 0x9C, 0xEF,
+    0xA0, 0xE0, 0x3B, 0x4D, 0xAE, 0x2A, 0xF5, 0xB0, 0xC8, 0xEB, 0xBB, 0x3C, 0x83, 0x53, 0x99, 0x61,
+    0x17, 0x2B, 0x04, 0x7E, 0xBA, 0x77, 0xD6, 0x26, 0xE1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0C, 0x7D,
+)
+
 r_c = (
     0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40,
     0x80, 0x1B, 0x36, 0x6C, 0xD8, 0xAB, 0x4D, 0x9A,
@@ -29,6 +51,7 @@ r_c = (
 
 colums_key_by_key_size = {16: 4, 24: 6, 32: 8}
 round_key_by_key_size = {16: 11, 24: 9, 32: 8}
+round_by_key_size = {16: 10, 24: 12, 32: 14}
 key_matrices = []
 
 def key_schedule(key):
@@ -59,17 +82,26 @@ def key_schedule(key):
             words_key[w] = bytes(i^j for i, j, in zip(words_key[w-1],  words_key[w]))
             key_matrices.append(words_key[w])
         i += 1
-    print("Chieu dai khoa ", len(key_matrices))
     return key_matrices
 
 def byte_substitution(block):
     block_b = [s_box[b] for b in block]
     return block_b
 
+def inv_byte_substitution(block):
+    block_b = [inv_s_box[b] for b in block]
+    return block_b
+
 def shift_rows(block):
     block[1], block[5], block[9], block[13] = block[5], block[9], block[13], block[1]
     block[2], block[6], block[10], block[14] = block[10], block[14], block[2], block[6]
     block[3], block[7], block[11], block[15] = block[15], block[3], block[7], block[11]
+    return block
+
+def inv_shift_rows(block):
+    block[1], block[5], block[9], block[13] = block[13], block[1], block[5], block[9]
+    block[2], block[6], block[10], block[14] = block[10], block[14], block[2], block[6]
+    block[3], block[7], block[11], block[15] = block[7], block[11], block[15], block[3]
     return block
 
 xtime = lambda a: (((a << 1) ^ 0x1B) & 0xFF) if (a & 0x80) else (a << 1)
@@ -105,39 +137,107 @@ def mix_column(b):
 
     return b
 
-def add_key(block, key_matrices, round_count):
+def inv_mix_column(b):
+    u0 = xtime(xtime(b[0] ^ b[2]))
+    v0 = xtime(xtime(b[1] ^ b[3]))
+    b[0] ^= u0
+    b[1] ^= v0
+    b[2] ^= u0
+    b[3] ^= v0
 
+    u1 = xtime(xtime(b[4] ^ b[6]))
+    v1 = xtime(xtime(b[5] ^ b[7]))
+    b[4] ^= u1
+    b[5] ^= v1
+    b[6] ^= u1
+    b[7] ^= v1
+
+    u2 = xtime(xtime(b[8] ^ b[10]))
+    v2 = xtime(xtime(b[9] ^ b[11]))
+    b[8] ^= u2
+    b[9] ^= v2
+    b[10] ^= u2
+    b[11] ^= v2
+
+    u3 = xtime(xtime(b[12] ^ b[14]))
+    v3 = xtime(xtime(b[13] ^ b[15]))
+    b[12] ^= u3
+    b[13] ^= v3
+    b[14] ^= u3
+    b[15] ^= v3
+
+    return b
+
+def add_key(block, key_matrices, round_count):
     for i in range(0, 16):
-        block[0] ^= key_matrices[((i+1)//4) + (round_count*4)][i%4]
+        block[0] ^= key_matrices[((i)//4) + (round_count*4)][i%4]
     return block
+
 
 def encrypt(plaintext, original_key):
     key_matrices = key_schedule(original_key)
     plaintext = [byte for byte in bytes(plaintext, "utf-8")]
-    # print([bin(byte) for byte in bytes(plaintext, "utf-8")])
     blocks = [plaintext[i:i+BLOCK_SIZE] for i in range(0, len(plaintext), BLOCK_SIZE)]
-
-    blocks_b = []
+    round = round_by_key_size[len(original_key)]
+    print(plaintext)
+    cipher_text=[]
 
     for b in blocks:
-        # Byte Substitution
-        block = byte_substitution(b)
-
-        # Shif Rows
-        block = shift_rows(block)
-        print(block)
-
-        # Mix Column
-        block = mix_column(block)
-        print(block)
-
         # Add key
-        block = add_key(block, key_matrices, round_count=1)
+        block = add_key(b, key_matrices, round_count=0)
 
-        print(block)
+        for r in range(1, round):
+            # Byte Substitution
+            block = byte_substitution(block)
+            # Shift Rows
+            block = shift_rows(block)
+            # Mix Column
+            block = mix_column(block)
+            # Add key
+            block = add_key(block, key_matrices, r)
+        
+        # Last round
+        # Byte Substitution
+        block = byte_substitution(block)
+        # Shift Rows
+        block = shift_rows(block)
+        # Add key
+        block = add_key(block, key_matrices, round)
+        cipher_text.append(block)
+
+    return cipher_text
+
+
+def decrypt(ciphertext, original_key):
+    key_matrices = key_schedule(original_key)
+    round = round_by_key_size[len(original_key)]
+    plain_text = []
+    for b in ciphertext:
+        # Inverse of round n_r
+        # Add key
+        block = add_key(b, key_matrices, round)
+        # Shift Rows
+        block = inv_shift_rows(block)
+        # Byte Substitution
+        block = inv_byte_substitution(block)
+        
+        for r in range(round-1, 0, -1):
+            # Add key
+            block = add_key(block, key_matrices, round)
+            # Shift Rows
+            block = inv_shift_rows(block)
+            # Mix Column
+            block = inv_mix_column(block)
+            # Byte Substitution
+            block = inv_byte_substitution(block)
+
+        block = add_key(block, key_matrices, 0)
+        plain_text.append(block)
+    print(plain_text)
+    return plain_text
+
 
 original_key = b'\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10'
 plaintext = "ccohcbxkdxjcctyeccohcbxkdxjcctye"
-# _key_matrices =  key_schedule(original_key)
-# print(_key_matrices)
-encrypt(plaintext, original_key)
+ciphertext = encrypt(plaintext, original_key)
+plain = decrypt(ciphertext, original_key)
