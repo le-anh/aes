@@ -1,8 +1,5 @@
-from random import random
-from xml.etree.ElementInclude import XINCLUDE
-
-from numpy import block
 BLOCK_SIZE = 16 # 16 bytes <==> 128 bits
+ROUND_BY_KEY_SIZE = {16: 10, 24: 12, 32: 14}
 
 s_box = (
     0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
@@ -49,48 +46,39 @@ r_c = (
     0xD4, 0xB3, 0x7D, 0xFA, 0xEF, 0xC5, 0x91, 0x39,
 )
 
-colums_key_by_key_size = {16: 4, 24: 6, 32: 8}
-round_key_by_key_size = {16: 11, 24: 9, 32: 8}
-round_by_key_size = {16: 10, 24: 12, 32: 14}
-key_matrices = []
-
 def key_schedule(key):
-    assert len(key) in colums_key_by_key_size
-    colums_key = colums_key_by_key_size[len(key)]
-
+    assert len(key) in ROUND_BY_KEY_SIZE
+    columns_key = len(key)//4
+    round_key = ((ROUND_BY_KEY_SIZE[len(key)] + 1) * 4) // columns_key
     # Round key 0
-    key_matrices = [key[i:i+colums_key] for i in range(0, len(key), colums_key)]
+    key_matrices = [key[i:i+columns_key] for i in range(0, len(key), columns_key)]
     
-    iteration_size = round_key_by_key_size[len(key)]
-
-    i = 1
-    while i < iteration_size:
-        words_key = key_matrices[len(key_matrices) - colums_key:]
-        # Function g
+    for r in range(1, round_key+1):
+        words_key = key_matrices[len(key_matrices) - columns_key:]
+        
+        # Function g:
         last_word = list(words_key[-1])
         last_word.append(last_word.pop(0))
         # S-Box
         last_word = [s_box[int(b)] for b in last_word]
 
         # adds a round coefficient RC
-        last_word[0] ^= r_c[i]
+        last_word[0] ^= r_c[r]
 
         words_key[0] = bytes(i^j for i, j, in zip(last_word,  words_key[0]))
         key_matrices.append(words_key[0])
 
-        for w in range(1, colums_key):
+        for w in range(1, columns_key):
             words_key[w] = bytes(i^j for i, j, in zip(words_key[w-1],  words_key[w]))
             key_matrices.append(words_key[w])
-        i += 1
+
     return key_matrices
 
 def byte_substitution(block):
-    block_b = [s_box[b] for b in block]
-    return block_b
+    return [s_box[b] for b in block]
 
 def inv_byte_substitution(block):
-    block_b = [inv_s_box[b] for b in block]
-    return block_b
+    return [inv_s_box[b] for b in block]
 
 def shift_rows(block):
     block[1], block[5], block[9], block[13] = block[5], block[9], block[13], block[1]
@@ -109,13 +97,13 @@ xtime = lambda a: (((a << 1) ^ 0x1B) & 0xFF) if (a & 0x80) else (a << 1)
 def mix_column(b):
     t0 = b[0] ^ b[1] ^ b[2] ^ b[3]
     b0 = b[0]
-    b[0] ^= t0 ^ xtime(b[0] ^ b[2])
+    b[0] ^= t0 ^ xtime(b[0] ^ b[1])
     b[1] ^= t0 ^ xtime(b[1] ^ b[2])
     b[2] ^= t0 ^ xtime(b[2] ^ b[3])
     b[3] ^= t0 ^ xtime(b[3] ^ b0)
 
     t1 = b[4] ^ b[5] ^ b[6] ^ b[7]
-    b1 = b[1]
+    b1 = b[4]
     b[4] ^= t1 ^ xtime(b[4] ^ b[5])
     b[5] ^= t1 ^ xtime(b[5] ^ b[6])
     b[6] ^= t1 ^ xtime(b[6] ^ b[7])
@@ -134,7 +122,6 @@ def mix_column(b):
     b[13] ^= t3 ^ xtime(b[13] ^ b[14])
     b[14] ^= t3 ^ xtime(b[14] ^ b[15])
     b[15] ^= t3 ^ xtime(b[15] ^ b3)
-
     return b
 
 def inv_mix_column(b):
@@ -166,25 +153,29 @@ def inv_mix_column(b):
     b[14] ^= u3
     b[15] ^= v3
 
+    b = mix_column(b)
     return b
 
 def add_key(block, key_matrices, round_count):
     for i in range(0, 16):
-        block[0] ^= key_matrices[((i)//4) + (round_count*4)][i%4]
+        block[i] ^= key_matrices[(i//4) + (round_count*4)][i%4]
     return block
 
-
 def encrypt(plaintext, original_key):
+
+    if isinstance(plaintext, str):
+        plaintext = [byte for byte in bytes(plaintext, "utf-8")]
+    if isinstance(original_key, str):
+        original_key = [byte for byte in bytes(original_key, "utf-8")]
+    
     key_matrices = key_schedule(original_key)
-    plaintext = [byte for byte in bytes(plaintext, "utf-8")]
     blocks = [plaintext[i:i+BLOCK_SIZE] for i in range(0, len(plaintext), BLOCK_SIZE)]
-    round = round_by_key_size[len(original_key)]
-    print(plaintext)
+    round = ROUND_BY_KEY_SIZE[len(original_key)]
     cipher_text=[]
 
     for b in blocks:
         # Add key
-        block = add_key(b, key_matrices, round_count=0)
+        block = add_key(b, key_matrices, 0)
 
         for r in range(1, round):
             # Byte Substitution
@@ -204,40 +195,54 @@ def encrypt(plaintext, original_key):
         # Add key
         block = add_key(block, key_matrices, round)
         cipher_text.append(block)
-
+    cipher_text = [byte for block in cipher_text for byte in block]
     return cipher_text
 
 
 def decrypt(ciphertext, original_key):
+    if isinstance(ciphertext, str):
+        ciphertext = [byte for byte in bytes(ciphertext, "utf-8")]
+    if isinstance(original_key, str):
+        original_key = [byte for byte in bytes(original_key, "utf-8")]
+
     key_matrices = key_schedule(original_key)
-    round = round_by_key_size[len(original_key)]
+    round = ROUND_BY_KEY_SIZE[len(original_key)]
+    blocks = [ciphertext[i:i+BLOCK_SIZE] for i in range(0, len(ciphertext), BLOCK_SIZE)]
     plain_text = []
-    for b in ciphertext:
-        # Inverse of round n_r
+    for b in blocks:
+        # Inverse of last round:
         # Add key
         block = add_key(b, key_matrices, round)
-        # Shift Rows
+        # Inverse Shift Rows
         block = inv_shift_rows(block)
-        # Byte Substitution
+        # Inverse Byte Substitution
         block = inv_byte_substitution(block)
         
         for r in range(round-1, 0, -1):
             # Add key
-            block = add_key(block, key_matrices, round)
-            # Shift Rows
-            block = inv_shift_rows(block)
-            # Mix Column
+            block = add_key(block, key_matrices, r)
+            # Inverse Mix Column
             block = inv_mix_column(block)
-            # Byte Substitution
+            # Inverse Shift Rows
+            block = inv_shift_rows(block)
+            # Inverse Byte Substitution
             block = inv_byte_substitution(block)
 
         block = add_key(block, key_matrices, 0)
         plain_text.append(block)
-    print(plain_text)
+    plain_text = [chr(byte) for block in plain_text for byte in block]
+    plain_text = ''.join(plain_text)
     return plain_text
 
 
-original_key = b'\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10'
-plaintext = "ccohcbxkdxjcctyeccohcbxkdxjcctye"
-ciphertext = encrypt(plaintext, original_key)
-plain = decrypt(ciphertext, original_key)
+original_key = "Nogami Lab. 0123"
+plaintext = "Nogami Lab.  Okayama University."
+
+cipher = encrypt(plaintext, original_key)
+plain = decrypt(cipher, original_key)
+
+print('Plain text: ', plaintext)
+print('Key: ', original_key)
+print("-----------------------------------------------------\n")
+print('Encrypt: ', bytes(cipher))
+print("Decrypt: ", plain)
