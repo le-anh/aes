@@ -1,14 +1,5 @@
-from os import stat
-from attr import has
-from numpy import block, byte
-
-BLOCK_SIZE = 16     # 16 bytes ~= 128 bits
-MAXTRIC_SIZE = 4    # 4x4 matrix
-KEY_SIZE = 128
-WORD_SIZE = 32
-_key_matrices = []
-_n_rounds = 10      # example 10 rounds for key lenght size 128 bits
-rounds_by_key_size = {16: 10, 24: 12, 32: 14}
+BLOCK_SIZE = 16 # 16 bytes <==> 128 bits
+ROUND_BY_KEY_SIZE = {16: 10, 24: 12, 32: 14}
 
 s_box = (
     0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
@@ -29,119 +20,270 @@ s_box = (
     0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16,
 )
 
-r_con = (
+inv_s_box = (
+    0x52, 0x09, 0x6A, 0xD5, 0x30, 0x36, 0xA5, 0x38, 0xBF, 0x40, 0xA3, 0x9E, 0x81, 0xF3, 0xD7, 0xFB,
+    0x7C, 0xE3, 0x39, 0x82, 0x9B, 0x2F, 0xFF, 0x87, 0x34, 0x8E, 0x43, 0x44, 0xC4, 0xDE, 0xE9, 0xCB,
+    0x54, 0x7B, 0x94, 0x32, 0xA6, 0xC2, 0x23, 0x3D, 0xEE, 0x4C, 0x95, 0x0B, 0x42, 0xFA, 0xC3, 0x4E,
+    0x08, 0x2E, 0xA1, 0x66, 0x28, 0xD9, 0x24, 0xB2, 0x76, 0x5B, 0xA2, 0x49, 0x6D, 0x8B, 0xD1, 0x25,
+    0x72, 0xF8, 0xF6, 0x64, 0x86, 0x68, 0x98, 0x16, 0xD4, 0xA4, 0x5C, 0xCC, 0x5D, 0x65, 0xB6, 0x92,
+    0x6C, 0x70, 0x48, 0x50, 0xFD, 0xED, 0xB9, 0xDA, 0x5E, 0x15, 0x46, 0x57, 0xA7, 0x8D, 0x9D, 0x84,
+    0x90, 0xD8, 0xAB, 0x00, 0x8C, 0xBC, 0xD3, 0x0A, 0xF7, 0xE4, 0x58, 0x05, 0xB8, 0xB3, 0x45, 0x06,
+    0xD0, 0x2C, 0x1E, 0x8F, 0xCA, 0x3F, 0x0F, 0x02, 0xC1, 0xAF, 0xBD, 0x03, 0x01, 0x13, 0x8A, 0x6B,
+    0x3A, 0x91, 0x11, 0x41, 0x4F, 0x67, 0xDC, 0xEA, 0x97, 0xF2, 0xCF, 0xCE, 0xF0, 0xB4, 0xE6, 0x73,
+    0x96, 0xAC, 0x74, 0x22, 0xE7, 0xAD, 0x35, 0x85, 0xE2, 0xF9, 0x37, 0xE8, 0x1C, 0x75, 0xDF, 0x6E,
+    0x47, 0xF1, 0x1A, 0x71, 0x1D, 0x29, 0xC5, 0x89, 0x6F, 0xB7, 0x62, 0x0E, 0xAA, 0x18, 0xBE, 0x1B,
+    0xFC, 0x56, 0x3E, 0x4B, 0xC6, 0xD2, 0x79, 0x20, 0x9A, 0xDB, 0xC0, 0xFE, 0x78, 0xCD, 0x5A, 0xF4,
+    0x1F, 0xDD, 0xA8, 0x33, 0x88, 0x07, 0xC7, 0x31, 0xB1, 0x12, 0x10, 0x59, 0x27, 0x80, 0xEC, 0x5F,
+    0x60, 0x51, 0x7F, 0xA9, 0x19, 0xB5, 0x4A, 0x0D, 0x2D, 0xE5, 0x7A, 0x9F, 0x93, 0xC9, 0x9C, 0xEF,
+    0xA0, 0xE0, 0x3B, 0x4D, 0xAE, 0x2A, 0xF5, 0xB0, 0xC8, 0xEB, 0xBB, 0x3C, 0x83, 0x53, 0x99, 0x61,
+    0x17, 0x2B, 0x04, 0x7E, 0xBA, 0x77, 0xD6, 0x26, 0xE1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0C, 0x7D,
+)
+
+r_c = (
     0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40,
     0x80, 0x1B, 0x36, 0x6C, 0xD8, 0xAB, 0x4D, 0x9A,
     0x2F, 0x5E, 0xBC, 0x63, 0xC6, 0x97, 0x35, 0x6A,
     0xD4, 0xB3, 0x7D, 0xFA, 0xEF, 0xC5, 0x91, 0x39,
 )
 
-def expand_key(key):
-    assert len(key) in rounds_by_key_size
-    _n_rounds = rounds_by_key_size[len(key)]
-    key_columns = bytes_to_matrix(key)
-    iteration_size = len(key) // 4
+def key_schedule(key):
+    assert len(key) in ROUND_BY_KEY_SIZE
+    columns_key = len(key)//4
+    round_key = ((ROUND_BY_KEY_SIZE[len(key)] + 1) * 4) // columns_key
+    # Round key 0
+    key_matrices = [key[i:i+columns_key] for i in range(0, len(key), columns_key)]
+    
+    for r in range(1, round_key+1):
+        words_key = key_matrices[len(key_matrices) - columns_key:]
+        
+        # Function g:
+        last_word = list(words_key[-1])
+        last_word.append(last_word.pop(0))
+        # S-Box
+        last_word = [s_box[int(b)] for b in last_word]
 
-    i = 1
-    while len(key_columns) < (_n_rounds + 1) * 4:
-        word = list(key_columns[-1])
-        if len(key_columns) % iteration_size == 0:
-            word.append(word.pop(0))
-            word = [s_box[b] for b in word]
-            word[0] ^= r_con[i]
-            i += 1
-        elif len(key) == 32 and len(key_columns) % iteration_size == 4:
-            word = [s_box[b] for b in word]
+        # adds a round coefficient RC
+        last_word[0] ^= r_c[r]
 
-        word = xor_bytes(word, key_columns[-iteration_size])
-        key_columns.append(word)
+        words_key[0] = bytes(i^j for i, j, in zip(last_word,  words_key[0]))
+        key_matrices.append(words_key[0])
 
-    return [key_columns[4*i:4*(i+1)] for i in range(len(key_columns) // 4)]
+        for w in range(1, columns_key):
+            words_key[w] = bytes(i^j for i, j, in zip(words_key[w-1],  words_key[w]))
+            key_matrices.append(words_key[w])
 
-def split_blocks(message, block_size=16, require_padding=True):
-    assert len(message) % block_size == 0 or not require_padding
-    return [message[i:i+16] for i in range(0, len(message), block_size)]
+    return key_matrices
 
-def bytes_to_matrix(text):
-    return [list(text[i:i+4]) for i in range(0, len(text), 4)]  # Convert a 16 bytes array to a 4x4 matrix.
+def byte_substitution(block):
+    return [s_box[b] for b in block]
 
-def xor_bytes(a, b):
-    print(a)
-    print(b)
-    return bytes(i^j for i, j, in zip(a, b))
+def inv_byte_substitution(block):
+    return [inv_s_box[b] for b in block]
 
-def add_round_key(state, key):
-    for i in range(MAXTRIC_SIZE):
-        for j in range(MAXTRIC_SIZE):
-            state[i][j] ^= key[i][j]
+def shift_rows(block):
+    block[1], block[5], block[9], block[13] = block[5], block[9], block[13], block[1]
+    block[2], block[6], block[10], block[14] = block[10], block[14], block[2], block[6]
+    block[3], block[7], block[11], block[15] = block[15], block[3], block[7], block[11]
+    return block
 
-def sub_bytes(state):
-    for i in range(MAXTRIC_SIZE):
-        for j in range(MAXTRIC_SIZE):
-            state[i][j] = s_box[state[i][j]]
+def inv_shift_rows(block):
+    block[1], block[5], block[9], block[13] = block[13], block[1], block[5], block[9]
+    block[2], block[6], block[10], block[14] = block[10], block[14], block[2], block[6]
+    block[3], block[7], block[11], block[15] = block[7], block[11], block[15], block[3]
+    return block
 
-def shift_rows(state):
-    state[1][0], state[1][1], state[1][2], state[1][3] = state[1][1], state[1][2], state[1][3], state[1][0]
-    state[2][0], state[2][1], state[2][2], state[2][3] = state[2][2], state[2][3], state[2][0], state[2][1]
-    state[3][0], state[3][1], state[3][2], state[3][3] = state[3][3], state[3][0], state[3][1], state[3][2]
-
-# learned from http://cs.ucsb.edu/~koc/cs178/projects/JT/aes.c
 xtime = lambda a: (((a << 1) ^ 0x1B) & 0xFF) if (a & 0x80) else (a << 1)
 
-def mix_single_column(column):
-    col_t = column[0] ^ column[1] ^ column[2] ^ column[3]
-    col_0 = column[0]
-    column[0] ^= col_t ^ xtime(column[0] ^ column[1])
-    column[1] ^= col_t ^ xtime(column[1] ^ column[2])
-    column[2] ^= col_t ^ xtime(column[2] ^ column[3])
-    column[3] ^= col_t ^ xtime(column[3] ^ col_0)
+def mix_column(b):
+    t0 = b[0] ^ b[1] ^ b[2] ^ b[3]
+    b0 = b[0]
+    b[0] ^= t0 ^ xtime(b[0] ^ b[1])
+    b[1] ^= t0 ^ xtime(b[1] ^ b[2])
+    b[2] ^= t0 ^ xtime(b[2] ^ b[3])
+    b[3] ^= t0 ^ xtime(b[3] ^ b0)
 
-def mix_column(state):
-    for i in range(MAXTRIC_SIZE):
-        mix_single_column(state[i])
+    t1 = b[4] ^ b[5] ^ b[6] ^ b[7]
+    b1 = b[4]
+    b[4] ^= t1 ^ xtime(b[4] ^ b[5])
+    b[5] ^= t1 ^ xtime(b[5] ^ b[6])
+    b[6] ^= t1 ^ xtime(b[6] ^ b[7])
+    b[7] ^= t1 ^ xtime(b[7] ^ b1)
 
-def encrypt_block(plaintext):
-    assert len(plaintext) == BLOCK_SIZE
-    plain_state = bytes_to_matrix(plaintext)
-    add_round_key(plain_state, _key_matrices[0])
+    t2 = b[8] ^ b[9] ^ b[10] ^ b[11]
+    b2 = b[8]
+    b[8] ^= t2 ^ xtime(b[8] ^ b[9])
+    b[9] ^= t2 ^ xtime(b[9] ^ b[10])
+    b[10] ^= t2 ^ xtime(b[10] ^ b[11])
+    b[11] ^= t2 ^ xtime(b[11] ^ b2)
 
-    for i in range(1, _n_rounds):
-        sub_bytes(plain_state)
-        shift_rows(plain_state)
-        mix_column(plain_state)
-        add_round_key(plain_state, _key_matrices[i])
+    t3 = b[12] ^ b[13] ^ b[14] ^ b[15]
+    b3 = b[12]
+    b[12] ^= t3 ^ xtime(b[12] ^ b[13])
+    b[13] ^= t3 ^ xtime(b[13] ^ b[14])
+    b[14] ^= t3 ^ xtime(b[14] ^ b[15])
+    b[15] ^= t3 ^ xtime(b[15] ^ b3)
+    return b
 
-    # last round
-    sub_bytes(plain_state)
-    shift_rows(plain_state)
-    add_round_key(plain_state, _key_matrices[-1])
+def inv_mix_column(b):
+    u0 = xtime(xtime(b[0] ^ b[2]))
+    v0 = xtime(xtime(b[1] ^ b[3]))
+    b[0] ^= u0
+    b[1] ^= v0
+    b[2] ^= u0
+    b[3] ^= v0
 
-def encrypt(plaintext, key):
+    u1 = xtime(xtime(b[4] ^ b[6]))
+    v1 = xtime(xtime(b[5] ^ b[7]))
+    b[4] ^= u1
+    b[5] ^= v1
+    b[6] ^= u1
+    b[7] ^= v1
 
-    blocks = []
-    expand_key(key)
-    for plaintext_block in split_blocks(plaintext):
-        block = encrypt_block(plaintext_block)
-        blocks.append(block)
+    u2 = xtime(xtime(b[8] ^ b[10]))
+    v2 = xtime(xtime(b[9] ^ b[11]))
+    b[8] ^= u2
+    b[9] ^= v2
+    b[10] ^= u2
+    b[11] ^= v2
 
-    return blocks
+    u3 = xtime(xtime(b[12] ^ b[14]))
+    v3 = xtime(xtime(b[13] ^ b[15]))
+    b[12] ^= u3
+    b[13] ^= v3
+    b[14] ^= u3
+    b[15] ^= v3
+
+    b = mix_column(b)
+    return b
+
+def add_key(block, key_matrices, round_count):
+    for i in range(0, 16):
+        block[i] ^= key_matrices[(i//4) + (round_count*4)][i%4]
+    return block
+def pad(plaintext):
+    """
+    Pads the given plaintext with PKCS#7 padding to a multiple of 16 bytes.
+    Note that if the plaintext size is a multiple of 16,
+    a whole block will be added.
+    """
+    padding_len = 16 - (len(plaintext) % 16)
+    padding = bytes([padding_len] * padding_len)
+    return plaintext + padding
+
+def unpad(plaintext):
+    """
+    Removes a PKCS#7 padding, returning the unpadded text and ensuring the
+    padding was correct.
+    """
+    padding_len = plaintext[-1]
+    assert padding_len > 0
+    message, padding = plaintext[:-padding_len], plaintext[-padding_len:]
+    assert all(p == padding_len for p in padding)
+    return message
+
+def encrypt(plaintext, original_key):
+    if isinstance(plaintext, str):
+        plaintext = pad(bytes(plaintext.encode('utf-8')))
+        # plaintext = [byte for byte in bytes(plaintext, "utf-8")]
+    if isinstance(plaintext, bytes):
+        plaintext = pad(bytes(plaintext))
+    if isinstance(plaintext, bytearray):
+        plaintext = pad(bytes(plaintext))
+        
+    
+    plaintext = [byte for byte in plaintext]
+    
+    if isinstance(original_key, str):
+        original_key = [byte for byte in bytes(original_key, "utf-8")]
+    
+   
+    key_matrices = key_schedule(original_key)
+    blocks = [plaintext[i:i+BLOCK_SIZE] for i in range(0, len(plaintext), BLOCK_SIZE)]
+    round = ROUND_BY_KEY_SIZE[len(original_key)]
+    cipher_text=[]
+
+    for b in blocks:
+        # Add key
+        block = add_key(b, key_matrices, 0)
+
+        for r in range(1, round):
+            # Byte Substitution
+            block = byte_substitution(block)
+            # Shift Rows
+            block = shift_rows(block)
+            # Mix Column
+            block = mix_column(block)
+            # Add key
+            block = add_key(block, key_matrices, r)
+        
+        # Last round
+        # Byte Substitution
+        block = byte_substitution(block)
+        # Shift Rows
+        block = shift_rows(block)
+        # Add key
+        block = add_key(block, key_matrices, round)
+        cipher_text.append(block)
+    cipher_text = [byte for block in cipher_text for byte in block]
+    return cipher_text
 
 
+def decrypt(ciphertext, original_key):
+    if isinstance(ciphertext, str):
+        ciphertext = [byte for byte in bytes(ciphertext, "utf-8")]
+    if isinstance(ciphertext, bytes):
+        ciphertext = [byte for byte in ciphertext]
+    if isinstance(original_key, str):
+        original_key = [byte for byte in bytes(original_key, "utf-8")]
 
-def decrypt(ciphertext, key):
+    key_matrices = key_schedule(original_key)
+    round = ROUND_BY_KEY_SIZE[len(original_key)]
+    blocks = [ciphertext[i:i+BLOCK_SIZE] for i in range(0, len(ciphertext), BLOCK_SIZE)]
+    plain_text = []
+    for b in blocks:
+        # Inverse of last round:
+        # Add key
+        block = add_key(b, key_matrices, round)
+        # Inverse Shift Rows
+        block = inv_shift_rows(block)
+        # Inverse Byte Substitution
+        block = inv_byte_substitution(block)
+        
+        for r in range(round-1, 0, -1):
+            # Add key
+            block = add_key(block, key_matrices, r)
+            # Inverse Mix Column
+            block = inv_mix_column(block)
+            # Inverse Shift Rows
+            block = inv_shift_rows(block)
+            # Inverse Byte Substitution
+            block = inv_byte_substitution(block)
 
-    plaintext = ''
-    return plaintext
+        block = add_key(block, key_matrices, 0)
+        plain_text.append(block)
 
-import random
-hash = random.getrandbits(128)
+    plain_text = [byte for block in plain_text for byte in block]
+    plain_text = unpad(plain_text)
 
-k = b'a3fa6d97f4807e145b37451fc344e58c'
-c = bytes(16)
-# a = int(k, 16)
+    # print("decrypt: ")
+    # print(bytearray(plain_text))
+    # print("")
+    # print("")
+    
+    # plain_text = [chr(byte) for byte in plain_text]
+    # plain_text = ''.join(plain_text)
+    
+    return plain_text
 
-# key_expand = expand_key(k)
-# print(key_expand)
 
-for r in range(10, 0, -1):
-    print(r)
+# original_key = "Nogami Lab. 0123"
+# plaintext = "Nogami Lab.  Okayama University."
+
+# cipher = encrypt(plaintext, original_key)
+# plain = decrypt(cipher, original_key)
+
+# print('Plain text: ', plaintext)
+# print('Key: ', original_key)
+# print("-----------------------------------------------------\n")
+# print('Encrypt: ', bytes(cipher))
+# print("Decrypt: ", plain)
