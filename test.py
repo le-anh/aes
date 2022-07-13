@@ -1,8 +1,8 @@
+import io
+import PIL.Image as Image
 import dhke as DHKE
 import aes as AES
 import gf_2_8 as GF_2_8
-import io
-import PIL.Image as Image
 
 def test_gf_2_8():
     x = 0b01010101

@@ -1,8 +1,8 @@
 from datetime import datetime
 import hashlib
 
-P = 11  # P is a prime
-G = 5   # G is a primitive root modulo P
+P = 47  # P is a prime
+G = 2   # G is a primitive element in the subgroup with 23 elements
 
 def exp_mod(a, b, p):
     result = 1
