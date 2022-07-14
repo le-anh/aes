@@ -1,6 +1,7 @@
 import io
 import PIL.Image as Image
 import dhke as DHKE
+import ecc as ECC
 import aes as AES
 import gf_2_8 as GF_2_8
 
@@ -42,6 +43,27 @@ def test_aes_dhke():
 
     print('Plain text: ', plaintext)
     print('Key: ', secret_key_A)
+    print("-----------------------------------------------------\n")
+    print('Encrypt: ', bytes(result_encypt))
+
+    print("Decrypt: ", ''.join([chr(byte) for byte in result_decypt]))
+
+def test_aes_ecc_ke():
+    plaintext = "Nogami Lab.  Okayama University."
+    key_priv_a = 1023
+    key_priv_b = 9081
+    
+    key_pub_a = ECC.get_public_key(key_priv_a)
+    key_pub_b = ECC.get_public_key(key_priv_b)
+
+    key_secret_a = ECC.get_secret_key(key_priv_a, key_pub_b)
+    result_encypt = AES.encrypt(plaintext, key_secret_a)
+
+    key_secret_b = ECC.get_secret_key(key_priv_b, key_pub_a)
+    result_decypt = AES.decrypt(result_encypt, key_secret_b)
+
+    print('Plain text: ', plaintext)
+    print('Key: ', key_secret_a)
     print("-----------------------------------------------------\n")
     print('Encrypt: ', bytes(result_encypt))
     print("Decrypt: ", ''.join([chr(byte) for byte in result_decypt]))
@@ -109,7 +131,8 @@ def run():
     # print("")
     # test_file_image()
     # test_file_text()
-    test_aes_dhke()
+    # test_aes_dhke()
+    test_aes_ecc_ke()
 
 if __name__ == "__main__":
     run()
