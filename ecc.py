@@ -17,7 +17,7 @@ def gcd(a, b):
         b = r
     return a
 
-def invert(n):
+def invert(n, P=P):
     if n < 0: n = P + n
     a1, a2, a3 = 1, 0, P
     b1, b2, b3 = 0, 1, n
