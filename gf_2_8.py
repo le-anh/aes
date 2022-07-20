@@ -34,3 +34,7 @@ def inv(x):         # x^254 = 1/x
     x = mpy(x, x)   # x = x^128
     p = mpy(p, x)   # p = x^(2+4+8+16+32+64+128)
     return p
+
+# a = 0b11010110
+
+# print(bin(inv(a)))

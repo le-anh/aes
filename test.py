@@ -48,23 +48,48 @@ def test_aes_dhke():
 
     print("Decrypt: ", ''.join([chr(byte) for byte in result_decypt]))
 
+# def test_aes_ecc_ke():
+#     plaintext = "Nogami Lab.  Okayama University."
+#     # key_priv_a = 1023
+#     key_priv_b = 9081
+#     # key_pub_a = ECC.get_public_key(key_priv_a)
+#     key_pub_b = ECC.get_public_key(key_priv_b)
+#     # key_secret_a = ECC.get_secret_key(key_priv_a, key_pub_b)
+#     # result_encypt = AES.encrypt(plaintext, key_secret_a)
+#     # key_secret_b = ECC.get_secret_key(key_priv_b, key_pub_a)
+#     # result_decypt = AES.decrypt(result_encypt, key_secret_b)
+    
+#     # Encrypt by A
+#     encrypt_ecc_key, ciphertext_pub_key = ECC.encryption_key(key_pub_b)
+#     result_encypt = AES.encrypt(plaintext, encrypt_ecc_key)
+
+#     # Decrypt by B
+#     decrypt_ecc_key = ECC.decryption_key(key_priv_b, ciphertext_pub_key)
+#     result_decypt = AES.decrypt(result_encypt, decrypt_ecc_key)
+    
+#     print("")
+#     print('Plain text: ', plaintext)
+#     print("-----------------------------------------------------")
+#     print('Encrypt key: ', encrypt_ecc_key)
+#     print('Encrypted: ', bytes(result_encypt))
+#     print('Decrypt key: ', decrypt_ecc_key)
+#     print("Decrypted: ", ''.join([chr(byte) for byte in result_decypt]))
+#     print("")
+
 def test_aes_ecc_ke():
     plaintext = "Nogami Lab.  Okayama University."
-    # key_priv_a = 1023
     key_priv_b = 9081
-    # key_pub_a = ECC.get_public_key(key_priv_a)
     key_pub_b = ECC.get_public_key(key_priv_b)
-    # key_secret_a = ECC.get_secret_key(key_priv_a, key_pub_b)
-    # result_encypt = AES.encrypt(plaintext, key_secret_a)
-    # key_secret_b = ECC.get_secret_key(key_priv_b, key_pub_a)
-    # result_decypt = AES.decrypt(result_encypt, key_secret_b)
     
+    # Encrypt by A
     encrypt_ecc_key, ciphertext_pub_key = ECC.encryption_key(key_pub_b)
     result_encypt = AES.encrypt(plaintext, encrypt_ecc_key)
 
-
+    # Decrypt by B
     decrypt_ecc_key = ECC.decryption_key(key_priv_b, ciphertext_pub_key)
     result_decypt = AES.decrypt(result_encypt, decrypt_ecc_key)
+    
+    # Show results
     print("")
     print('Plain text: ', plaintext)
     print("-----------------------------------------------------")
