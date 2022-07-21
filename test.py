@@ -1,5 +1,11 @@
+from email.mime import image
 import io
+import os
+import time
+from unittest import result
 import PIL.Image as Image
+import numpy as np
+from hashlib import pbkdf2_hmac
 import dhke as DHKE
 import ecc as ECC
 import aes as AES
@@ -76,6 +82,8 @@ def test_aes_dhke():
 #     print("Decrypted: ", ''.join([chr(byte) for byte in result_decypt]))
 #     print("")
 
+
+
 def test_aes_ecc_ke():
     plaintext = "Nogami Lab.  Okayama University."
     key_priv_b = 9081
@@ -99,10 +107,18 @@ def test_aes_ecc_ke():
     print("Decrypted: ", ''.join([chr(byte) for byte in result_decypt]))
     print("")
 
+
+
+
+
+
+
 def test_file_text():
     original_key = "Nogami Lab. 0123"
     
-    file = open("./test/text.txt","rb")
+    # file = open("./source_test/text.txt","rb")
+    t0 = time.time()
+    file = open("./source_test/file.to.create","rb")
     plaintext = file.read()
     file.close()
 
@@ -111,6 +127,7 @@ def test_file_text():
     file = open("./result/text_encrypt_result.txt","wb")
     file.write(bytes(result_encrypt))
     file.close()
+    t1 = time.time()
 
     file = open("./result/text_encrypt_result.txt","rb")
     ciphertext = file.read()
@@ -122,12 +139,17 @@ def test_file_text():
     file = open("./result/text_decrypt_result.txt","w")
     file.write(''.join([chr(byte) for byte in result_decrypt]))
     file.close()
+    t2 = time.time()
+    print(t1-t0)
+    print(t2-t1)
 
     print("Success.")
 
 def readimage(path):
     with open(path, "rb") as f:
         return bytearray(f.read())
+
+
 
 def test_file_image():
     original_key = "Nogami Lab. 0123"
@@ -154,6 +176,58 @@ def test_file_image():
 
     print("Success.")
 
+
+
+def read_image(path):
+    return np.array(Image.open(path))
+
+def save_image(img, path):
+    return Image.fromarray(img).save(path)
+
+def encrypt_image(path=''):
+    original_key = "Nogami Lab. 0123"
+    img = read_image('./source_test/japan.jpg')
+    result_encrypt = AES.encrypt(img.tobytes(), original_key)
+    # tmp = np.frombuffer(bytes(result_encrypt), dtype=img.dtype)
+    img.imag = result_encrypt
+    save_image(img, './result/japan_opencv.jpg')
+    # Image.fromarray(bytes(result_encrypt)).save('./result/japan.jpg')
+    print((img.imag))
+
+
+def test_key_schedule():
+    plaintext = "Nogami Lab.  Okayama University."
+    # original_key = "Nogami Lab. 012345" #128
+    # original_key = "Nogami Lab. 012312345678" #192
+    original_key = "Nogami Lab. 01231234567812345678" #256
+    # if isinstance(original_key, str):
+    #     original_key = [byte for byte in bytes(original_key, "utf-8")]
+
+    # print(len(original_key))
+    # key_matric = AES.key_schedule(original_key)
+    # print("len_key_matric: ", len(key_matric))
+
+    result_encypt = AES.encrypt(plaintext, original_key)
+    result_decypt = AES.decrypt(result_encypt, original_key)
+
+    print('Plain text: ', plaintext)
+    print("-----------------------------------------------------\n")
+    print('Encrypt: ', bytes(result_encypt))
+    print("Decrypt: ", ''.join([chr(byte) for byte in result_decypt]))
+
+def test_text():
+    plaintext = "Nogami Lab.  Okayama University.123"
+    original_key = "Nogami Lab. 0123"
+   
+    result_encypt = AES.encrypt(plaintext, original_key)
+    result_decypt = AES.decrypt(result_encypt, original_key)
+
+    print('Plain text: ', plaintext)
+    print("-----------------------------------------------------\n")
+    print('Encrypt: ', bytes(result_encypt))
+    print("Decrypt: ", ''.join([chr(byte) for byte in result_decypt]))
+
+    
 def run():
     # test_gf_2_8()
     # test_dhke()
@@ -161,9 +235,16 @@ def run():
     # test_string()
     # print("")
     # test_file_image()
-    # test_file_text()
+    test_file_text()
+    # test_text()
     # test_aes_dhke()
-    test_aes_ecc_ke()
+    # test_aes_ecc_ke()
+    # encrypt_image()
+    # test_key_schedule()
+    # test_iv()
+    # test_encrypt_cbc()
+    # with open("./source_test/file.to.create", "wb") as out:
+    #     out.truncate(10 * 1024 * 1024)
 
 if __name__ == "__main__":
     run()

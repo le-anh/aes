@@ -1,3 +1,8 @@
+import math
+from operator import xor
+import os
+from hashlib import pbkdf2_hmac
+
 BLOCK_SIZE = 16 # 16 bytes <==> 128 bits
 ROUND_BY_KEY_SIZE = {16: 10, 24: 12, 32: 14}
 
@@ -46,31 +51,44 @@ r_c = (
     0xD4, 0xB3, 0x7D, 0xFA, 0xEF, 0xC5, 0x91, 0x39,
 )
 
+def g_function(last_row_key, round):
+    last_word = list(last_row_key[-1])
+    last_word.append(last_word.pop(0))
+    # S-Box
+    last_word = [s_box[int(b)] for b in last_word]
+    # Adds a round coefficient RC
+    last_word[0] ^= r_c[round]
+    last_row_key[0] = bytes(i^j for i, j, in zip(last_word,  last_row_key[0]))
+    return last_row_key
+
+def h_function(w):
+    return [s_box[b] for b in w]
+
 def key_schedule(key):
     assert len(key) in ROUND_BY_KEY_SIZE
     columns_key = len(key)//4
-    round_key = ((ROUND_BY_KEY_SIZE[len(key)] + 1) * 4) // columns_key
-    # Round key 0
-    key_matrices = [key[i:i+columns_key] for i in range(0, len(key), columns_key)]
-    
-    for r in range(1, round_key+1):
-        words_key = key_matrices[len(key_matrices) - columns_key:]
+    num_words = (ROUND_BY_KEY_SIZE[len(key)] + 1) * 4
+    round_key = math.ceil(num_words / columns_key)
+
+    key_matrices = [key[i:i+columns_key] for i in range(0, len(key), 4)]    # round key 0
+
+    for r in range(1, round_key):
+        last_row_key = key_matrices[len(key_matrices) - columns_key:] # a last row key
         
-        # Function g:
-        last_word = list(words_key[-1])
-        last_word.append(last_word.pop(0))
-        # S-Box
-        last_word = [s_box[int(b)] for b in last_word]
+        last_row_key = g_function(last_row_key, r)  # g function
 
-        # adds a round coefficient RC
-        last_word[0] ^= r_c[r]
-
-        words_key[0] = bytes(i^j for i, j, in zip(last_word,  words_key[0]))
-        key_matrices.append(words_key[0])
+        key_matrices.append(last_row_key[0])
 
         for w in range(1, columns_key):
-            words_key[w] = bytes(i^j for i, j, in zip(words_key[w-1],  words_key[w]))
-            key_matrices.append(words_key[w])
+            if r*columns_key + w < num_words:
+                if w % 8 == 4 and len(key) == 256:
+                    w_s_box = h_function(last_row_key[w-1]) # h function
+                    last_row_key[w] = bytes(i^j for i, j, in zip(w_s_box,  last_row_key[w]))
+                else:
+                    last_row_key[w] = bytes(i^j for i, j, in zip(last_row_key[w-1],  last_row_key[w]))
+                key_matrices.append(last_row_key[w])
+            else:
+                break
 
     return key_matrices
 
@@ -160,6 +178,7 @@ def add_key(block, key_matrices, round_count):
     for i in range(0, 16):
         block[i] ^= key_matrices[(i//4) + (round_count*4)][i%4]
     return block
+
 def pad(plaintext):
     """
     Pads the given plaintext with PKCS#7 padding to a multiple of 16 bytes.
@@ -181,109 +200,131 @@ def unpad(plaintext):
     assert all(p == padding_len for p in padding)
     return message
 
-def encrypt(plaintext, original_key):
+def split_block(byte_arr):
+    return [byte_arr[i:i+BLOCK_SIZE] for i in range(0, len(byte_arr), BLOCK_SIZE)]
+
+def valid_plaintext_original_key(plaintext, original_key):
     if isinstance(plaintext, str):
         plaintext = pad(bytes(plaintext.encode('utf-8')))
-        # plaintext = [byte for byte in bytes(plaintext, "utf-8")]
     if isinstance(plaintext, bytes):
         plaintext = pad(bytes(plaintext))
     if isinstance(plaintext, bytearray):
         plaintext = pad(bytes(plaintext))
-        
-    
     plaintext = [byte for byte in plaintext]
     
     if isinstance(original_key, str):
         original_key = [byte for byte in bytes(original_key, "utf-8")]
-    
-   
+    return plaintext, original_key
+
+def encrypt_block(block, key_matrices, NUM_ROUND):
+    block = add_key(block, key_matrices, 0) # Add key
+    for r in range(1, NUM_ROUND):
+        block = byte_substitution(block)    # Byte Substitution
+        block = shift_rows(block)   # Shift Rows
+        block = mix_column(block)   # Mix Column
+        block = add_key(block, key_matrices, r) # Add key
+    # Last round
+    block = byte_substitution(block)    # Byte Substitution
+    block = shift_rows(block)   # Shift Rows
+    block = add_key(block, key_matrices, NUM_ROUND) # Add key
+    return block
+
+def encrypt(plaintext, original_key):
+    plaintext, original_key = valid_plaintext_original_key(plaintext, original_key)
     key_matrices = key_schedule(original_key)
-    blocks = [plaintext[i:i+BLOCK_SIZE] for i in range(0, len(plaintext), BLOCK_SIZE)]
-    round = ROUND_BY_KEY_SIZE[len(original_key)]
+    NUM_ROUND = ROUND_BY_KEY_SIZE[len(original_key)]
     cipher_text=[]
-
-    for b in blocks:
-        # Add key
-        block = add_key(b, key_matrices, 0)
-
-        for r in range(1, round):
-            # Byte Substitution
-            block = byte_substitution(block)
-            # Shift Rows
-            block = shift_rows(block)
-            # Mix Column
-            block = mix_column(block)
-            # Add key
-            block = add_key(block, key_matrices, r)
-        
-        # Last round
-        # Byte Substitution
-        block = byte_substitution(block)
-        # Shift Rows
-        block = shift_rows(block)
-        # Add key
-        block = add_key(block, key_matrices, round)
+    for block in split_block(plaintext):
+        block = encrypt_block(block, key_matrices, NUM_ROUND)
         cipher_text.append(block)
     cipher_text = [byte for block in cipher_text for byte in block]
     return cipher_text
 
+# def get_key_iv(password, salt, workload=100000):
+#     AES_KEY_SIZE = 16
+#     IV_SIZE = 16
+#     HMAC_KEY_SIZE = 16
+#     stretched = pbkdf2_hmac('sha256', password, salt, workload, AES_KEY_SIZE + HMAC_KEY_SIZE + IV_SIZE)
+#     aes_key, stretched = stretched[:AES_KEY_SIZE], stretched[AES_KEY_SIZE:]
+#     hmac_key, stretched = stretched[:HMAC_KEY_SIZE], stretched[HMAC_KEY_SIZE:]
+#     iv = stretched[:IV_SIZE]
+#     return aes_key, hmac_key, iv
 
-def decrypt(ciphertext, original_key):
+def xor_bytes(block1, block2):
+    return [b1^b2 for b1, b2 in zip(block1, block2)]
+
+# def encrypt_cbc(plaintext, original_key):
+#     salt = os.urandom(16)
+#     key = original_key.encode('utf-8')
+#     key, hmac_key, iv = get_key_iv(key, salt)
+
+#     plaintext, original_key = valid_plaintext_original_key(plaintext, original_key)
+#     key_matrices = key_schedule(original_key)
+#     NUM_ROUND = ROUND_BY_KEY_SIZE[len(original_key)]
+#     cipher_text=[]
+#     previous_block = iv
+#     print("encrypt iv: ", iv)
+
+#     for block in split_block(plaintext):
+#         block = encrypt_block(xor_bytes(block, previous_block), key_matrices, NUM_ROUND)
+#         cipher_text.append(block)
+#         previous_block = block
+#     cipher_text = [byte for block in cipher_text for byte in block]
+#     return cipher_text, hmac_key, salt
+
+def valid_ciphertext_original_key(ciphertext, original_key):
     if isinstance(ciphertext, str):
         ciphertext = [byte for byte in bytes(ciphertext, "utf-8")]
     if isinstance(ciphertext, bytes):
         ciphertext = [byte for byte in ciphertext]
     if isinstance(original_key, str):
         original_key = [byte for byte in bytes(original_key, "utf-8")]
+    return ciphertext, original_key
 
+def decrypt_block(block, key_matrices, NUM_ROUND):
+    # Inverse of last round:
+    block = add_key(block, key_matrices, NUM_ROUND) # Add key
+    block = inv_shift_rows(block)   # Inverse Shift Rows
+    block = inv_byte_substitution(block)     # Inverse Byte Substitution
+    
+    for r in range(NUM_ROUND-1, 0, -1):
+        block = add_key(block, key_matrices, r) # Add key
+        block = inv_mix_column(block)   # Inverse Mix Column
+        block = inv_shift_rows(block)   # Inverse Shift Rows
+        block = inv_byte_substitution(block)    # Inverse Byte Substitution
+
+    block = add_key(block, key_matrices, 0)
+    return block
+
+def decrypt(ciphertext, original_key):
+    ciphertext, original_key = valid_ciphertext_original_key(ciphertext, original_key)
     key_matrices = key_schedule(original_key)
-    round = ROUND_BY_KEY_SIZE[len(original_key)]
-    blocks = [ciphertext[i:i+BLOCK_SIZE] for i in range(0, len(ciphertext), BLOCK_SIZE)]
+    NUM_ROUND = ROUND_BY_KEY_SIZE[len(original_key)]
     plain_text = []
-    for b in blocks:
-        # Inverse of last round:
-        # Add key
-        block = add_key(b, key_matrices, round)
-        # Inverse Shift Rows
-        block = inv_shift_rows(block)
-        # Inverse Byte Substitution
-        block = inv_byte_substitution(block)
-        
-        for r in range(round-1, 0, -1):
-            # Add key
-            block = add_key(block, key_matrices, r)
-            # Inverse Mix Column
-            block = inv_mix_column(block)
-            # Inverse Shift Rows
-            block = inv_shift_rows(block)
-            # Inverse Byte Substitution
-            block = inv_byte_substitution(block)
-
-        block = add_key(block, key_matrices, 0)
+    for block in split_block(ciphertext):
+        block = decrypt_block(block, key_matrices, NUM_ROUND)
         plain_text.append(block)
-
-    plain_text = [byte for block in plain_text for byte in block]
-    plain_text = unpad(plain_text)
-
-    # print("decrypt: ")
-    # print(bytearray(plain_text))
-    # print("")
-    # print("")
-    
-    # plain_text = [chr(byte) for byte in plain_text]
-    # plain_text = ''.join(plain_text)
-    
+    plain_text = unpad([byte for block in plain_text for byte in block])
     return plain_text
 
+# def decrypt_cbc(ciphertext, original_key, hmac, salt):
+#     key, hmac_key, iv = get_key_iv(original_key.encode('utf-8'), salt)
 
-# original_key = "Nogami Lab. 0123"
-# plaintext = "Nogami Lab.  Okayama University."
 
-# cipher = encrypt(plaintext, original_key)
-# plain = decrypt(cipher, original_key)
+#     ciphertext, original_key = valid_ciphertext_original_key(ciphertext, original_key)
+#     key_matrices = key_schedule(original_key)
+#     NUM_ROUND = ROUND_BY_KEY_SIZE[len(original_key)]
+#     plain_text = []
 
-# print('Plain text: ', plaintext)
-# print('Key: ', original_key)
-# print("-----------------------------------------------------\n")
-# print('Encrypt: ', bytes(cipher))
-# print("Decrypt: ", plain)
+#     print("decrypt iv: ", iv)
+#     previous_block = iv
+#     for block in split_block(ciphertext):
+#         block = xor_bytes(decrypt_block(block, key_matrices, NUM_ROUND), previous_block)
+#         plain_text.append(block)
+#         previous_block = block
+
+#     print(plain_text)
+#     plain_text = unpad([byte for block in plain_text for byte in block])
+
+#     return plain_text
+
