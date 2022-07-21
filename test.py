@@ -1,8 +1,5 @@
-from email.mime import image
+from datetime import datetime
 import io
-import os
-import time
-from unittest import result
 import PIL.Image as Image
 import numpy as np
 from hashlib import pbkdf2_hmac
@@ -115,33 +112,71 @@ def test_aes_ecc_ke():
 
 def test_file_text():
     original_key = "Nogami Lab. 0123"
+
+    for i in range(1, 11):
+        source_path = "./source_test/"
+        destination_path = "./result/"
+        file_name = str(i)+".txt"
+
+        file = open(source_path + file_name,"rb")
+        plaintext = file.read()
+        file.close()
+
+        t0 = datetime.now()
+        result_encrypt = AES.encrypt(plaintext, original_key)
+        t1 = datetime.now()
+        
+        file = open(destination_path + "encrypt_" + file_name,"wb")
+        file.write(bytes(result_encrypt))
+        file.close()
+
+        file = open(destination_path + "encrypt_" + file_name,"rb")
+        ciphertext = file.read()
+        file.close()
+
+        t2 = datetime.now()
+        result_decrypt = AES.decrypt(ciphertext, original_key)
+        t3 = datetime.now()
+        
+
+        file = open(destination_path + "decrypt_" + file_name,"w")
+        file.write(''.join([chr(byte) for byte in result_decrypt]))
+        file.close()
+
+        file = open(destination_path + "logs.txt","a")
+        file.write(str(datetime.now()) + "\n")
+        file.write(file_name + "\n")
+        file.write("t1-t0: " + str(t1-t0) + "\n")
+        file.write("t3-t2: " + str(t3-t2) + "\n\n")
+        file.close()
+
     
     # file = open("./source_test/text.txt","rb")
-    t0 = time.time()
-    file = open("./source_test/file.to.create","rb")
-    plaintext = file.read()
-    file.close()
+    # t0 = datetime.now()
+    # file = open("./source_test/file.to.create","rb")
+    # plaintext = file.read()
+    # file.close()
 
-    result_encrypt = AES.encrypt(plaintext, original_key)
+    # result_encrypt = AES.encrypt(plaintext, original_key)
     
-    file = open("./result/text_encrypt_result.txt","wb")
-    file.write(bytes(result_encrypt))
-    file.close()
-    t1 = time.time()
+    # file = open("./result/text_encrypt_result.txt","wb")
+    # file.write(bytes(result_encrypt))
+    # file.close()
+    # t1 = datetime.now()
 
-    file = open("./result/text_encrypt_result.txt","rb")
-    ciphertext = file.read()
-    file.close()
+    # file = open("./result/text_encrypt_result.txt","rb")
+    # ciphertext = file.read()
+    # file.close()
 
-    result_decrypt = AES.decrypt(ciphertext, original_key)
+    # result_decrypt = AES.decrypt(ciphertext, original_key)
     
 
-    file = open("./result/text_decrypt_result.txt","w")
-    file.write(''.join([chr(byte) for byte in result_decrypt]))
-    file.close()
-    t2 = time.time()
-    print(t1-t0)
-    print(t2-t1)
+    # file = open("./result/text_decrypt_result.txt","w")
+    # file.write(''.join([chr(byte) for byte in result_decrypt]))
+    # file.close()
+    # t2 = datetime.now()
+    # print(t1-t0)
+    # print(t2-t1)
 
     print("Success.")
 
@@ -235,7 +270,20 @@ def run():
     # test_string()
     # print("")
     # test_file_image()
+
     test_file_text()
+    # t0 = 1
+    # t1 = 2
+    # t2 = 5
+    # t3 = 9
+
+    # file = open("./result/logs.txt","a")
+    # file.write("")
+    # file.write("logs.txt\n")
+    # file.write("t1-t0: " + str(t1-t0) +"\n")
+    # file.write("t3-t2: " + str(t3-t2)+"\n\n")
+    # file.close()
+
     # test_text()
     # test_aes_dhke()
     # test_aes_ecc_ke()
@@ -243,8 +291,9 @@ def run():
     # test_key_schedule()
     # test_iv()
     # test_encrypt_cbc()
-    # with open("./source_test/file.to.create", "wb") as out:
-    #     out.truncate(10 * 1024 * 1024)
+    # for i in range(1, 11):
+    #     with open("./source_test/"+str(i)+".txt", "wb") as out:
+    #         out.truncate(i*5 * 1024 * 1024)
 
 if __name__ == "__main__":
     run()
