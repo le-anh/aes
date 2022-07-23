@@ -1,7 +1,4 @@
 import math
-from operator import xor
-import os
-from hashlib import pbkdf2_hmac
 
 BLOCK_SIZE = 16 # 16 bytes <==> 128 bits
 ROUND_BY_KEY_SIZE = {16: 10, 24: 12, 32: 14}
@@ -54,10 +51,8 @@ r_c = (
 def g_function(last_row_key, round):
     last_word = list(last_row_key[-1])
     last_word.append(last_word.pop(0))
-    # S-Box
-    last_word = [s_box[int(b)] for b in last_word]
-    # Adds a round coefficient RC
-    last_word[0] ^= r_c[round]
+    last_word = [s_box[int(b)] for b in last_word]  # S-Box
+    last_word[0] ^= r_c[round]  # Adds a round coefficient RC
     last_row_key[0] = bytes(i^j for i, j, in zip(last_word,  last_row_key[0]))
     return last_row_key
 
@@ -69,16 +64,11 @@ def key_schedule(key):
     columns_key = len(key)//4
     num_words = (ROUND_BY_KEY_SIZE[len(key)] + 1) * 4
     round_key = math.ceil(num_words / columns_key)
-
     key_matrices = [key[i:i+columns_key] for i in range(0, len(key), 4)]    # round key 0
-
     for r in range(1, round_key):
         last_row_key = key_matrices[len(key_matrices) - columns_key:] # a last row key
-        
         last_row_key = g_function(last_row_key, r)  # g function
-
         key_matrices.append(last_row_key[0])
-
         for w in range(1, columns_key):
             if r*columns_key + w < num_words:
                 if w % 8 == 4 and len(key) == 256:
@@ -89,7 +79,6 @@ def key_schedule(key):
                 key_matrices.append(last_row_key[w])
             else:
                 break
-
     return key_matrices
 
 def byte_substitution(block):
@@ -180,20 +169,11 @@ def add_key(block, key_matrices, round_count):
     return block
 
 def pad(plaintext):
-    """
-    Pads the given plaintext with PKCS#7 padding to a multiple of 16 bytes.
-    Note that if the plaintext size is a multiple of 16,
-    a whole block will be added.
-    """
     padding_len = 16 - (len(plaintext) % 16)
     padding = bytes([padding_len] * padding_len)
     return plaintext + padding
 
 def unpad(plaintext):
-    """
-    Removes a PKCS#7 padding, returning the unpadded text and ensuring the
-    padding was correct.
-    """
     padding_len = plaintext[-1]
     assert padding_len > 0
     message, padding = plaintext[:-padding_len], plaintext[-padding_len:]
@@ -211,7 +191,6 @@ def valid_plaintext_original_key(plaintext, original_key):
     if isinstance(plaintext, bytearray):
         plaintext = pad(bytes(plaintext))
     plaintext = [byte for byte in plaintext]
-    
     if isinstance(original_key, str):
         original_key = [byte for byte in bytes(original_key, "utf-8")]
     return plaintext, original_key
@@ -240,37 +219,8 @@ def encrypt(plaintext, original_key):
     cipher_text = [byte for block in cipher_text for byte in block]
     return cipher_text
 
-# def get_key_iv(password, salt, workload=100000):
-#     AES_KEY_SIZE = 16
-#     IV_SIZE = 16
-#     HMAC_KEY_SIZE = 16
-#     stretched = pbkdf2_hmac('sha256', password, salt, workload, AES_KEY_SIZE + HMAC_KEY_SIZE + IV_SIZE)
-#     aes_key, stretched = stretched[:AES_KEY_SIZE], stretched[AES_KEY_SIZE:]
-#     hmac_key, stretched = stretched[:HMAC_KEY_SIZE], stretched[HMAC_KEY_SIZE:]
-#     iv = stretched[:IV_SIZE]
-#     return aes_key, hmac_key, iv
-
 def xor_bytes(block1, block2):
     return [b1^b2 for b1, b2 in zip(block1, block2)]
-
-# def encrypt_cbc(plaintext, original_key):
-#     salt = os.urandom(16)
-#     key = original_key.encode('utf-8')
-#     key, hmac_key, iv = get_key_iv(key, salt)
-
-#     plaintext, original_key = valid_plaintext_original_key(plaintext, original_key)
-#     key_matrices = key_schedule(original_key)
-#     NUM_ROUND = ROUND_BY_KEY_SIZE[len(original_key)]
-#     cipher_text=[]
-#     previous_block = iv
-#     print("encrypt iv: ", iv)
-
-#     for block in split_block(plaintext):
-#         block = encrypt_block(xor_bytes(block, previous_block), key_matrices, NUM_ROUND)
-#         cipher_text.append(block)
-#         previous_block = block
-#     cipher_text = [byte for block in cipher_text for byte in block]
-#     return cipher_text, hmac_key, salt
 
 def valid_ciphertext_original_key(ciphertext, original_key):
     if isinstance(ciphertext, str):
@@ -286,13 +236,11 @@ def decrypt_block(block, key_matrices, NUM_ROUND):
     block = add_key(block, key_matrices, NUM_ROUND) # Add key
     block = inv_shift_rows(block)   # Inverse Shift Rows
     block = inv_byte_substitution(block)     # Inverse Byte Substitution
-    
     for r in range(NUM_ROUND-1, 0, -1):
         block = add_key(block, key_matrices, r) # Add key
         block = inv_mix_column(block)   # Inverse Mix Column
         block = inv_shift_rows(block)   # Inverse Shift Rows
         block = inv_byte_substitution(block)    # Inverse Byte Substitution
-
     block = add_key(block, key_matrices, 0)
     return block
 
@@ -306,25 +254,3 @@ def decrypt(ciphertext, original_key):
         plain_text.append(block)
     plain_text = unpad([byte for block in plain_text for byte in block])
     return plain_text
-
-# def decrypt_cbc(ciphertext, original_key, hmac, salt):
-#     key, hmac_key, iv = get_key_iv(original_key.encode('utf-8'), salt)
-
-
-#     ciphertext, original_key = valid_ciphertext_original_key(ciphertext, original_key)
-#     key_matrices = key_schedule(original_key)
-#     NUM_ROUND = ROUND_BY_KEY_SIZE[len(original_key)]
-#     plain_text = []
-
-#     print("decrypt iv: ", iv)
-#     previous_block = iv
-#     for block in split_block(ciphertext):
-#         block = xor_bytes(decrypt_block(block, key_matrices, NUM_ROUND), previous_block)
-#         plain_text.append(block)
-#         previous_block = block
-
-#     print(plain_text)
-#     plain_text = unpad([byte for block in plain_text for byte in block])
-
-#     return plain_text
-
