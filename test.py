@@ -1,299 +1,73 @@
 from datetime import datetime
-import io
-import PIL.Image as Image
-import numpy as np
-from hashlib import pbkdf2_hmac
-import dhke as DHKE
-import ecc as ECC
+import csv
 import aes as AES
-import gf_2_8 as GF_2_8
 
-def test_gf_2_8():
-    x = 0b01010101
-    y = 0b10101010
-    y = 0b10101010
-    print("x: ", bin(x))
-    print("y: ", bin(y))
-    print("x + y: ", bin(GF_2_8.add(x, y)))
-    print("x - y: ", bin(GF_2_8.sub(x, y)))
-    print("x * y: ", bin(GF_2_8.mpy(x, y)))
-    print("x / y: ", bin(GF_2_8.div(x, y)))
-    print("x^(-1): ", bin(GF_2_8.inv(x)))
+SOURCE_PATH = "./source_test/"
+DESTINATION_PATH = "./result/"
+KEY = "Nogami Lab. 0123"
 
-def test_dhke():
-    priv_key_A = 9
-    priv_key_B = 8
-    public_key_A = DHKE.get_public_key(priv_key_A)
-    public_key_B = DHKE.get_public_key(priv_key_B)
-    secret_key_A = DHKE.get_secret_key(public_key_B, priv_key_A)
-    secret_key_B = DHKE.get_secret_key(public_key_A, priv_key_B)
+def create_file_example():
+    for i in range(1, 9):
+        with open("./source_test/"+str(i+10)+".txt", "wb") as out:
+            out.truncate(i*128 * 1024 * 1024)
 
-    print("secret_key_A: ", secret_key_A)
-    print("secret_key_B: ", secret_key_B)
-
-def test_aes_dhke():
-    plaintext = "Nogami Lab.  Okayama University."
-    priv_key_A = 9
-    priv_key_B = 8
-    public_key_A = DHKE.get_public_key(priv_key_A)
-    public_key_B = DHKE.get_public_key(priv_key_B)
-
-    secret_key_A = DHKE.get_secret_key(public_key_B, priv_key_A)
-    result_encypt = AES.encrypt(plaintext, secret_key_A)
-
-    secret_key_B = DHKE.get_secret_key(public_key_A, priv_key_B)
-    result_decypt = AES.decrypt(result_encypt, secret_key_B)
-
-    print('Plain text: ', plaintext)
-    print('Key: ', secret_key_A)
-    print("-----------------------------------------------------\n")
-    print('Encrypt: ', bytes(result_encypt))
-
-    print("Decrypt: ", ''.join([chr(byte) for byte in result_decypt]))
-
-# def test_aes_ecc_ke():
-#     plaintext = "Nogami Lab.  Okayama University."
-#     # key_priv_a = 1023
-#     key_priv_b = 9081
-#     # key_pub_a = ECC.get_public_key(key_priv_a)
-#     key_pub_b = ECC.get_public_key(key_priv_b)
-#     # key_secret_a = ECC.get_secret_key(key_priv_a, key_pub_b)
-#     # result_encypt = AES.encrypt(plaintext, key_secret_a)
-#     # key_secret_b = ECC.get_secret_key(key_priv_b, key_pub_a)
-#     # result_decypt = AES.decrypt(result_encypt, key_secret_b)
-    
-#     # Encrypt by A
-#     encrypt_ecc_key, ciphertext_pub_key = ECC.encryption_key(key_pub_b)
-#     result_encypt = AES.encrypt(plaintext, encrypt_ecc_key)
-
-#     # Decrypt by B
-#     decrypt_ecc_key = ECC.decryption_key(key_priv_b, ciphertext_pub_key)
-#     result_decypt = AES.decrypt(result_encypt, decrypt_ecc_key)
-    
-#     print("")
-#     print('Plain text: ', plaintext)
-#     print("-----------------------------------------------------")
-#     print('Encrypt key: ', encrypt_ecc_key)
-#     print('Encrypted: ', bytes(result_encypt))
-#     print('Decrypt key: ', decrypt_ecc_key)
-#     print("Decrypted: ", ''.join([chr(byte) for byte in result_decypt]))
-#     print("")
-
-
-
-def test_aes_ecc_ke():
-    plaintext = "Nogami Lab.  Okayama University."
-    key_priv_b = 9081
-    key_pub_b = ECC.get_public_key(key_priv_b)
-    
-    # Encrypt by A
-    encrypt_ecc_key, ciphertext_pub_key = ECC.encryption_key(key_pub_b)
-    result_encypt = AES.encrypt(plaintext, encrypt_ecc_key)
-
-    # Decrypt by B
-    decrypt_ecc_key = ECC.decryption_key(key_priv_b, ciphertext_pub_key)
-    result_decypt = AES.decrypt(result_encypt, decrypt_ecc_key)
-    
-    # Show results
-    print("")
-    print('Plain text: ', plaintext)
-    print("-----------------------------------------------------")
-    print('Encrypt key: ', encrypt_ecc_key)
-    print('Encrypted: ', bytes(result_encypt))
-    print('Decrypt key: ', decrypt_ecc_key)
-    print("Decrypted: ", ''.join([chr(byte) for byte in result_decypt]))
-    print("")
-
-
-
-
-
-
-
-def test_file_text():
-    original_key = "Nogami Lab. 0123"
-
-    for i in range(1, 11):
-        source_path = "./source_test/"
-        destination_path = "./result/"
-        file_name = str(i)+".txt"
-
-        file = open(source_path + file_name,"rb")
-        plaintext = file.read()
-        file.close()
-
-        t0 = datetime.now()
-        result_encrypt = AES.encrypt(plaintext, original_key)
-        t1 = datetime.now()
-        
-        file = open(destination_path + "encrypt_" + file_name,"wb")
-        file.write(bytes(result_encrypt))
-        file.close()
-
-        file = open(destination_path + "encrypt_" + file_name,"rb")
-        ciphertext = file.read()
-        file.close()
-
-        t2 = datetime.now()
-        result_decrypt = AES.decrypt(ciphertext, original_key)
-        t3 = datetime.now()
-        
-
-        file = open(destination_path + "decrypt_" + file_name,"w")
-        file.write(''.join([chr(byte) for byte in result_decrypt]))
-        file.close()
-
-        file = open(destination_path + "logs.txt","a")
-        file.write(str(datetime.now()) + "\n")
-        file.write(file_name + "\n")
-        file.write("t1-t0: " + str(t1-t0) + "\n")
-        file.write("t3-t2: " + str(t3-t2) + "\n\n")
-        file.close()
-
-    
-    # file = open("./source_test/text.txt","rb")
-    # t0 = datetime.now()
-    # file = open("./source_test/file.to.create","rb")
-    # plaintext = file.read()
-    # file.close()
-
-    # result_encrypt = AES.encrypt(plaintext, original_key)
-    
-    # file = open("./result/text_encrypt_result.txt","wb")
-    # file.write(bytes(result_encrypt))
-    # file.close()
-    # t1 = datetime.now()
-
-    # file = open("./result/text_encrypt_result.txt","rb")
-    # ciphertext = file.read()
-    # file.close()
-
-    # result_decrypt = AES.decrypt(ciphertext, original_key)
-    
-
-    # file = open("./result/text_decrypt_result.txt","w")
-    # file.write(''.join([chr(byte) for byte in result_decrypt]))
-    # file.close()
-    # t2 = datetime.now()
-    # print(t1-t0)
-    # print(t2-t1)
-
-    print("Success.")
-
-def readimage(path):
-    with open(path, "rb") as f:
-        return bytearray(f.read())
-
-
-
-def test_file_image():
-    original_key = "Nogami Lab. 0123"
-    path = "./test/japan.jpg"
-    plaintext = readimage(path)
-
-
-    result_encrypt = AES.encrypt(plaintext, original_key)
-
-    file = open("./result/image_encrypt_result.bin","wb")
-    file.write(bytearray(result_encrypt))
+def encrypt_file(file_name):
+    file = open(SOURCE_PATH + file_name,"rb")
+    plaintext = file.read()
     file.close()
+    t0 = datetime.now()
+    result_encrypt = AES.encrypt(plaintext, KEY)
+    t1 = datetime.now()
+    file = open(DESTINATION_PATH + "encrypt_" + file_name,"wb")
+    file.write(bytes(result_encrypt))
+    file.close()
+    return t1 - t0
 
-    file = open("./result/image_encrypt_result.bin","rb")
+def decrypt_file(file_name):
+    file = open(DESTINATION_PATH + "encrypt_" + file_name,"rb")
     ciphertext = file.read()
     file.close()
+    t2 = datetime.now()
+    result_decrypt = AES.decrypt(ciphertext, KEY)
+    t3 = datetime.now()
+    file = open(DESTINATION_PATH + "decrypt_" + file_name,"w")
+    file.write(''.join([chr(byte) for byte in result_decrypt]))
+    file.close()
+    return t3 - t2
 
-    result_decrypt = AES.decrypt(ciphertext, original_key)
-    
-   
-    dataBytesIO = io.BytesIO(bytearray(result_decrypt))
-    image = Image.open(dataBytesIO)
-    image.save("./result/image_decrypt_result.jpg")
+def export_result_experiment(interval_encrypt, interval_decrypt, file_name):
+    file = open(DESTINATION_PATH + "logs.txt","a")
+    file.write(str(datetime.now()) + "\n")
+    file.write(file_name + "\n")
+    file.write("t1-t0: " + str(interval_encrypt) + "\n")
+    file.write("t3-t2: " + str(interval_decrypt) + "\n\n")
+    file.close()
 
+def test_encrypt_file():
+    for j in range(10):
+        data_row = [j]
+        for i in range(11, 19):
+            file_name = str(i)+".txt"
+            interval_encrypt = encrypt_file(file_name)
+            interval_decrypt = decrypt_file(file_name)
+            data_row.append(interval_encrypt.total_seconds() * 1000.0)
+            data_row.append(interval_decrypt.total_seconds() * 1000.0)
+            print(j, i)
+            print(interval_encrypt)
+            print(interval_decrypt)
+        write_csv(data_row)
+        
+        print("Success (iteration: " + str(j + 1) + ")")
     print("Success.")
 
+def write_csv(data_row = ''):
+    data_row = [datetime.now()] + data_row
+    with open(DESTINATION_PATH + 'result.csv', 'a', encoding='UTF8') as f:
+        writer = csv.writer(f)
+        writer.writerow(data_row)
 
-
-def read_image(path):
-    return np.array(Image.open(path))
-
-def save_image(img, path):
-    return Image.fromarray(img).save(path)
-
-def encrypt_image(path=''):
-    original_key = "Nogami Lab. 0123"
-    img = read_image('./source_test/japan.jpg')
-    result_encrypt = AES.encrypt(img.tobytes(), original_key)
-    # tmp = np.frombuffer(bytes(result_encrypt), dtype=img.dtype)
-    img.imag = result_encrypt
-    save_image(img, './result/japan_opencv.jpg')
-    # Image.fromarray(bytes(result_encrypt)).save('./result/japan.jpg')
-    print((img.imag))
-
-
-def test_key_schedule():
-    plaintext = "Nogami Lab.  Okayama University."
-    # original_key = "Nogami Lab. 012345" #128
-    # original_key = "Nogami Lab. 012312345678" #192
-    original_key = "Nogami Lab. 01231234567812345678" #256
-    # if isinstance(original_key, str):
-    #     original_key = [byte for byte in bytes(original_key, "utf-8")]
-
-    # print(len(original_key))
-    # key_matric = AES.key_schedule(original_key)
-    # print("len_key_matric: ", len(key_matric))
-
-    result_encypt = AES.encrypt(plaintext, original_key)
-    result_decypt = AES.decrypt(result_encypt, original_key)
-
-    print('Plain text: ', plaintext)
-    print("-----------------------------------------------------\n")
-    print('Encrypt: ', bytes(result_encypt))
-    print("Decrypt: ", ''.join([chr(byte) for byte in result_decypt]))
-
-def test_text():
-    plaintext = "Nogami Lab.  Okayama University.123"
-    original_key = "Nogami Lab. 0123"
-   
-    result_encypt = AES.encrypt(plaintext, original_key)
-    result_decypt = AES.decrypt(result_encypt, original_key)
-
-    print('Plain text: ', plaintext)
-    print("-----------------------------------------------------\n")
-    print('Encrypt: ', bytes(result_encypt))
-    print("Decrypt: ", ''.join([chr(byte) for byte in result_decypt]))
-
-    
 def run():
-    # test_gf_2_8()
-    # test_dhke()
-    # print("")
-    # test_string()
-    # print("")
-    # test_file_image()
-
-    test_file_text()
-    # t0 = 1
-    # t1 = 2
-    # t2 = 5
-    # t3 = 9
-
-    # file = open("./result/logs.txt","a")
-    # file.write("")
-    # file.write("logs.txt\n")
-    # file.write("t1-t0: " + str(t1-t0) +"\n")
-    # file.write("t3-t2: " + str(t3-t2)+"\n\n")
-    # file.close()
-
-    # test_text()
-    # test_aes_dhke()
-    # test_aes_ecc_ke()
-    # encrypt_image()
-    # test_key_schedule()
-    # test_iv()
-    # test_encrypt_cbc()
-    # for i in range(1, 11):
-    #     with open("./source_test/"+str(i)+".txt", "wb") as out:
-    #         out.truncate(i*5 * 1024 * 1024)
+    test_encrypt_file()
 
 if __name__ == "__main__":
     run()
