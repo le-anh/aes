@@ -1,2 +1,4 @@
 result/*
+!result/*.csv
+!result/log.txt
 source_test/*
