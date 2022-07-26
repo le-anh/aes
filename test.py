@@ -52,7 +52,7 @@ def test_encrypt_file():
     for j in range(1):
         data_row = [j]
         for i in range(1, 2):
-            file_name = "text.txt"
+            file_name = "4.txt"
             # file_name = str(i)+".txt"
             interval_encrypt = encrypt_file(file_name)
             interval_decrypt = decrypt_file(file_name)
@@ -73,8 +73,8 @@ def write_csv(data_row = ''):
         writer.writerow(data_row)
 
 def run():
-    # test_encrypt_file()
-    create_file_example()
+    test_encrypt_file()
+    # create_file_example()
 
 if __name__ == "__main__":
     run()
