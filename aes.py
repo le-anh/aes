@@ -1,4 +1,5 @@
 import math
+from datetime import date, datetime
 
 BLOCK_SIZE = 16 # 16 bytes <==> 128 bits
 ROUND_BY_KEY_SIZE = {16: 10, 24: 12, 32: 14}
@@ -101,34 +102,52 @@ def inv_shift_rows(block):
 
 xtime = lambda a: (((a << 1) ^ 0x1B) & 0xFF) if (a & 0x80) else (a << 1)
 
-def mix_column(b):
+def mix_signle_column(b):
     t0 = b[0] ^ b[1] ^ b[2] ^ b[3]
     b0 = b[0]
     b[0] ^= t0 ^ xtime(b[0] ^ b[1])
     b[1] ^= t0 ^ xtime(b[1] ^ b[2])
     b[2] ^= t0 ^ xtime(b[2] ^ b[3])
     b[3] ^= t0 ^ xtime(b[3] ^ b0)
+    return b
 
-    t1 = b[4] ^ b[5] ^ b[6] ^ b[7]
-    b1 = b[4]
-    b[4] ^= t1 ^ xtime(b[4] ^ b[5])
-    b[5] ^= t1 ^ xtime(b[5] ^ b[6])
-    b[6] ^= t1 ^ xtime(b[6] ^ b[7])
-    b[7] ^= t1 ^ xtime(b[7] ^ b1)
+def mix_column(b):
+    for i in range(0, 16, 4):
+        b[i:i+4] = mix_signle_column(b[i:i+4])
+        # t0 = b[i] ^ b[i+1] ^ b[i+2] ^ b[i+3]
+        # b0 = b[i]
+        # b[i] ^= t0 ^ xtime(b[i] ^ b[i+1])
+        # b[i+1] ^= t0 ^ xtime(b[i+1] ^ b[i+2])
+        # b[i+2] ^= t0 ^ xtime(b[i+2] ^ b[i+3])
+        # b[i+3] ^= t0 ^ xtime(b[i+3] ^ b0)
 
-    t2 = b[8] ^ b[9] ^ b[10] ^ b[11]
-    b2 = b[8]
-    b[8] ^= t2 ^ xtime(b[8] ^ b[9])
-    b[9] ^= t2 ^ xtime(b[9] ^ b[10])
-    b[10] ^= t2 ^ xtime(b[10] ^ b[11])
-    b[11] ^= t2 ^ xtime(b[11] ^ b2)
+    # t0 = b[0] ^ b[1] ^ b[2] ^ b[3]
+    # b0 = b[0]
+    # b[0] ^= t0 ^ xtime(b[0] ^ b[1])
+    # b[1] ^= t0 ^ xtime(b[1] ^ b[2])
+    # b[2] ^= t0 ^ xtime(b[2] ^ b[3])
+    # b[3] ^= t0 ^ xtime(b[3] ^ b0)
 
-    t3 = b[12] ^ b[13] ^ b[14] ^ b[15]
-    b3 = b[12]
-    b[12] ^= t3 ^ xtime(b[12] ^ b[13])
-    b[13] ^= t3 ^ xtime(b[13] ^ b[14])
-    b[14] ^= t3 ^ xtime(b[14] ^ b[15])
-    b[15] ^= t3 ^ xtime(b[15] ^ b3)
+    # t1 = b[4] ^ b[5] ^ b[6] ^ b[7]
+    # b1 = b[4]
+    # b[4] ^= t1 ^ xtime(b[4] ^ b[5])
+    # b[5] ^= t1 ^ xtime(b[5] ^ b[6])
+    # b[6] ^= t1 ^ xtime(b[6] ^ b[7])
+    # b[7] ^= t1 ^ xtime(b[7] ^ b1)
+
+    # t2 = b[8] ^ b[9] ^ b[10] ^ b[11]
+    # b2 = b[8]
+    # b[8] ^= t2 ^ xtime(b[8] ^ b[9])
+    # b[9] ^= t2 ^ xtime(b[9] ^ b[10])
+    # b[10] ^= t2 ^ xtime(b[10] ^ b[11])
+    # b[11] ^= t2 ^ xtime(b[11] ^ b2)
+
+    # t3 = b[12] ^ b[13] ^ b[14] ^ b[15]
+    # b3 = b[12]
+    # b[12] ^= t3 ^ xtime(b[12] ^ b[13])
+    # b[13] ^= t3 ^ xtime(b[13] ^ b[14])
+    # b[14] ^= t3 ^ xtime(b[14] ^ b[15])
+    # b[15] ^= t3 ^ xtime(b[15] ^ b3)
     return b
 
 def inv_mix_column(b):
