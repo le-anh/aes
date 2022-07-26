@@ -1,4 +1,4 @@
-result/*
+result/
 !result/*.csv
 !result/log.txt
-source_test/*
+source_test/
