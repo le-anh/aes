@@ -7,9 +7,14 @@ DESTINATION_PATH = "./result/"
 KEY = "Nogami Lab. 0123"
 
 def create_file_example():
-    for i in range(1, 9):
-        with open("./source_test/"+str(i+10)+".txt", "wb") as out:
-            out.truncate(i*128 * 1024 * 1024)
+    file_size = 1024 * 1024
+    for i in range(1, 6):
+        # with open("./source_test/"+str(i+10)+"", "wb") as out:
+        #     out.truncate(i*128 * 1024 * 1024)
+        with open("./source_test/"+str(i)+".txt", "w") as out:
+            for j in range(file_size):
+                out.writelines("Nogami Lab. Okayama University.\n")
+        file_size *= 2
 
 def encrypt_file(file_name):
     file = open(SOURCE_PATH + file_name,"rb")
@@ -44,10 +49,11 @@ def export_result_experiment(interval_encrypt, interval_decrypt, file_name):
     file.close()
 
 def test_encrypt_file():
-    for j in range(10):
+    for j in range(1):
         data_row = [j]
-        for i in range(11, 19):
-            file_name = str(i)+".txt"
+        for i in range(1, 2):
+            file_name = "text.txt"
+            # file_name = str(i)+".txt"
             interval_encrypt = encrypt_file(file_name)
             interval_decrypt = decrypt_file(file_name)
             data_row.append(interval_encrypt.total_seconds() * 1000.0)
@@ -67,7 +73,8 @@ def write_csv(data_row = ''):
         writer.writerow(data_row)
 
 def run():
-    test_encrypt_file()
+    # test_encrypt_file()
+    create_file_example()
 
 if __name__ == "__main__":
     run()
