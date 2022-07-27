@@ -276,7 +276,6 @@ def decrypt_cbc(ciphertext, original_key):
         previous_block = pre_block
         plain_text.append(block)
     plain_text = unpad([byte for block in plain_text for byte in block])
-    # return [byte for block in plain_text for byte in block]
     return plain_text
 
 def decrypt(ciphertext, original_key):

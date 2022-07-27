@@ -6,6 +6,16 @@ SOURCE_PATH = "./source_test/"
 DESTINATION_PATH = "./result/"
 KEY = "Nogami Lab. 0123"
 
+def example():
+    with open("in_file_name", "rb") as fin, open("out_file_name", "wb") as fout:
+        while True:
+            block = fin.read(524288)  # 2^19
+            if not block:
+                break
+            output = AES.encrypt(block)
+            
+            fout.write(output)
+
 def create_file_example():
     file_size = 1024 * 1024
     for i in range(1, 6):
@@ -77,10 +87,20 @@ def test_string():
     result_decrypt = AES.decrypt(result_encrypt, KEY)
     print("result_encrypt: ", bytes(result_encrypt).hex())
     print("result_decrypt: ", ''.join([chr(byte) for byte in result_decrypt]))
-
+def add(a, b):
+    a += b
+    return a
 def run():
     # test_encrypt_file()
-    test_string()
+    a = 3
+    b = 5
+    print(a)
+    print(b)
+    c = add(a, b)
+    print(a)
+    print(b)
+    print(c)
+    # test_string()
     # create_file_example()
 
 if __name__ == "__main__":
