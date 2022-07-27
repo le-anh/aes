@@ -79,8 +79,8 @@ def test_string():
     print("result_decrypt: ", ''.join([chr(byte) for byte in result_decrypt]))
 
 def run():
-    test_encrypt_file()
-    # test_string()
+    # test_encrypt_file()
+    test_string()
     # create_file_example()
 
 if __name__ == "__main__":

@@ -1,7 +1,9 @@
+import copy
 import math
 
 BLOCK_SIZE = 16 # 16 bytes <==> 128 bits
 ROUND_BY_KEY_SIZE = {16: 10, 24: 12, 32: 14}
+IV = b'\xf3\xf5\xf8\x98\xf3\xf5\xf8\x98\xf3\xf5\xf8\x98\xf3\xf5\xf8\x98'
 
 s_box = (
     0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
@@ -208,16 +210,33 @@ def encrypt_block(block, key_matrices, NUM_ROUND):
     block = add_key(block, key_matrices, NUM_ROUND) # Add key
     return block
 
-def encrypt(plaintext, original_key):
+
+def encrypt_cbc(plaintext, original_key):
     plaintext, original_key = valid_plaintext_original_key(plaintext, original_key)
     key_matrices = key_schedule(original_key)
     NUM_ROUND = ROUND_BY_KEY_SIZE[len(original_key)]
+    previous_block = IV
     cipher_text=[]
     for block in split_block(plaintext):
+        block = xor_bytes(block, previous_block)
         block = encrypt_block(block, key_matrices, NUM_ROUND)
+        previous_block = block
         cipher_text.append(block)
     cipher_text = [byte for block in cipher_text for byte in block]
     return cipher_text
+
+
+def encrypt(plaintext, original_key):
+    return encrypt_cbc(plaintext, original_key)
+    # plaintext, original_key = valid_plaintext_original_key(plaintext, original_key)
+    # key_matrices = key_schedule(original_key)
+    # NUM_ROUND = ROUND_BY_KEY_SIZE[len(original_key)]
+    # cipher_text=[]
+    # for block in split_block(plaintext):
+    #     block = encrypt_block(block, key_matrices, NUM_ROUND)
+    #     cipher_text.append(block)
+    # cipher_text = [byte for block in cipher_text for byte in block]
+    # return cipher_text
 
 def xor_bytes(block1, block2):
     return [b1^b2 for b1, b2 in zip(block1, block2)]
@@ -244,13 +263,30 @@ def decrypt_block(block, key_matrices, NUM_ROUND):
     block = add_key(block, key_matrices, 0)
     return block
 
-def decrypt(ciphertext, original_key):
+def decrypt_cbc(ciphertext, original_key):
     ciphertext, original_key = valid_ciphertext_original_key(ciphertext, original_key)
     key_matrices = key_schedule(original_key)
     NUM_ROUND = ROUND_BY_KEY_SIZE[len(original_key)]
+    previous_block = IV
     plain_text = []
     for block in split_block(ciphertext):
+        pre_block = copy.copy(block)
         block = decrypt_block(block, key_matrices, NUM_ROUND)
+        block = xor_bytes(block, previous_block)
+        previous_block = pre_block
         plain_text.append(block)
     plain_text = unpad([byte for block in plain_text for byte in block])
+    # return [byte for block in plain_text for byte in block]
     return plain_text
+
+def decrypt(ciphertext, original_key):
+    return decrypt_cbc(ciphertext, original_key)
+    # ciphertext, original_key = valid_ciphertext_original_key(ciphertext, original_key)
+    # key_matrices = key_schedule(original_key)
+    # NUM_ROUND = ROUND_BY_KEY_SIZE[len(original_key)]
+    # plain_text = []
+    # for block in split_block(ciphertext):
+    #     block = decrypt_block(block, key_matrices, NUM_ROUND)
+    #     plain_text.append(block)
+    # plain_text = unpad([byte for block in plain_text for byte in block])
+    # return plain_text
