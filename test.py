@@ -23,17 +23,17 @@ def encrypt_file(file_name):
     t0 = datetime.now()
     result_encrypt = AES.encrypt(plaintext, KEY)
     t1 = datetime.now()
-    file = open(DESTINATION_PATH + "encrypt_" + file_name,"wb")
-    file.write(bytes(result_encrypt))
+    file = open(DESTINATION_PATH + "encrypt_" + file_name,"w")
+    file.write(bytes(result_encrypt).hex())
     file.close()
     return t1 - t0
 
 def decrypt_file(file_name):
-    file = open(DESTINATION_PATH + "encrypt_" + file_name,"rb")
+    file = open(DESTINATION_PATH + "encrypt_" + file_name,"r")
     ciphertext = file.read()
     file.close()
     t2 = datetime.now()
-    result_decrypt = AES.decrypt(ciphertext, KEY)
+    result_decrypt = AES.decrypt(bytearray.fromhex(ciphertext), KEY)
     t3 = datetime.now()
     file = open(DESTINATION_PATH + "decrypt_" + file_name,"w")
     file.write(''.join([chr(byte) for byte in result_decrypt]))
@@ -52,14 +52,13 @@ def test_encrypt_file():
     for j in range(1):
         data_row = [j]
         for i in range(1, 2):
-            file_name = "4.txt"
-            # file_name = str(i)+".txt"
-            interval_encrypt = encrypt_file(file_name)
-            interval_decrypt = decrypt_file(file_name)
-            data_row.append(interval_encrypt.total_seconds() * 1000.0)
-            data_row.append(interval_decrypt.total_seconds() * 1000.0)
             print(j, i)
+            file_name = str(i)+".txt"
+            interval_encrypt = encrypt_file(file_name)
+            data_row.append(interval_encrypt.total_seconds() * 1000.0)
             print(interval_encrypt)
+            interval_decrypt = decrypt_file(file_name)
+            data_row.append(interval_decrypt.total_seconds() * 1000.0)
             print(interval_decrypt)
         write_csv(data_row)
         
@@ -72,8 +71,16 @@ def write_csv(data_row = ''):
         writer = csv.writer(f)
         writer.writerow(data_row)
 
+def test_string():
+    plaintext = "Nogami Lab. Okayama University."
+    result_encrypt = AES.encrypt(plaintext, KEY)
+    result_decrypt = AES.decrypt(result_encrypt, KEY)
+    print("result_encrypt: ", bytes(result_encrypt).hex())
+    print("result_decrypt: ", ''.join([chr(byte) for byte in result_decrypt]))
+
 def run():
     test_encrypt_file()
+    # test_string()
     # create_file_example()
 
 if __name__ == "__main__":
