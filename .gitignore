@@ -1,6 +1,6 @@
 !result/
 !result/*.*
-!source_test/
-!source_test/*.*
+!original/
+!original/*.*
 result/*.csv
 result/log.txt
