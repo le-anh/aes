@@ -1,3 +1,5 @@
+from encrypt_file import FileEncrypter 
+from file_decrypt import FileDecrypter 
 from datetime import datetime
 import csv
 import aes as AES
@@ -75,6 +77,15 @@ def test_encrypt_file():
         print("Success (iteration: " + str(j + 1) + ")")
     print("Success.")
 
+def test_encrypt_file2():
+    # encrypter = FileEncrypter()
+    # result = encrypter.Encrypt(SOURCE_PATH + "5.txt", KEY)
+    # encrypter.SaveTo(DESTINATION_PATH + "dec_5.txt")
+    # print("Encrypt success!")
+
+    decrypter = FileDecrypter()
+    decrypter.Decrypt(DESTINATION_PATH + "dec_5.txt", KEY)
+
 def write_csv(data_row = ''):
     data_row = [datetime.now()] + data_row
     with open(DESTINATION_PATH + 'result.csv', 'a', encoding='UTF8') as f:
@@ -87,21 +98,9 @@ def test_string():
     result_decrypt = AES.decrypt(result_encrypt, KEY)
     print("result_encrypt: ", bytes(result_encrypt).hex())
     print("result_decrypt: ", ''.join([chr(byte) for byte in result_decrypt]))
-def add(a, b):
-    a += b
-    return a
+
 def run():
-    # test_encrypt_file()
-    a = 3
-    b = 5
-    print(a)
-    print(b)
-    c = add(a, b)
-    print(a)
-    print(b)
-    print(c)
-    # test_string()
-    # create_file_example()
+    test_encrypt_file2()
 
 if __name__ == "__main__":
     run()
