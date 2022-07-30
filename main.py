@@ -32,14 +32,16 @@ def file_decrypt(file_name):
     return dec_time
 
 def file_enc_dec():
-    for i in range(10):
-        print(f"Iterating: {i+1}")
-        data_row = [i+1]
-        for fn in range(8):
-            file_name = str(fn+1)
-            data_row.append(file_encrypt(file_name))
-            data_row.append(file_decrypt(file_name))
-        export_to_csv(data_row)
+    file_encrypt("text")
+    file_decrypt("text")
+    # for i in range(10):
+    #     print(f"Iterating: {i+1}")
+    #     data_row = [i+1]
+    #     for fn in range(8):
+    #         file_name = str(fn+1)
+    #         data_row.append(file_encrypt(file_name))
+    #         data_row.append(file_decrypt(file_name))
+    #     export_to_csv(data_row)
 
 def run():
     file_enc_dec()
