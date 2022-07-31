@@ -1,4 +1,3 @@
-from cgitb import text
 import csv
 from datetime import datetime
 from lib.file_encrypter import FileEncrypter
