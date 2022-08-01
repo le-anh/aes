@@ -40,6 +40,5 @@ def file_enc_dec():
 def run():
     file_enc_dec()
 
-
 if __name__ == "__main__":
     run()
