@@ -1,9 +1,12 @@
 from datetime import datetime
 import hashlib
+import json
 import random
 from Crypto.Cipher import AES
+from numpy import longlong
 
 class Point:
+   
     def __init__(self, x, y):
         self.x = x
         self.y = y
@@ -76,6 +79,26 @@ def decryption_key(priv_key, ciphertext_pub_key):
     shared_ecc_key = Point_Multiplication(priv_key, ciphertext_pub_key)
     return hashlib.sha1(str(shared_ecc_key.x).encode()).digest()[:AES.block_size]
 
+
+
+def create_key(password:str, user:str):
+    key_priv = int.from_bytes(password.encode('utf-8'), byteorder="big", signed=False)
+    key_public = Point_Multiplication(key_priv, G)
+    key_share, key_shared = encryption_key(key_public)
+    print(key_public)
+
+    with open('../keys/' + user, 'w') as f:
+        f.writelines(hex(key_shared.x) + "\n")
+        f.writelines(hex(key_shared.y))
+
+def get_ecryption_key(user:str):
+    with open('../keys/' + user, 'r') as f:
+        print(((int(f.readline(), 16))))
+        key_public = Point(int(f.readline(), 16), int(f.readline(), 16))
+        print(hex(int(f.readline(), 16)))
+        key_ecrypt = encryption_key(key_public)
+    print(key_ecrypt)
+
 def test():
     t0 = datetime.now()
     # key_priv_a = 1023
@@ -89,11 +112,11 @@ def test():
     # print(key_secret_b.x, key_secret_b.y)
 
     shared_ecc_key, ciphertext_pub_key = encryption_key(key_pub_b)
-    # shared_ecc_key2 = decryption_key(key_priv_b, ciphertext_pub_key)
+    shared_ecc_key2 = decryption_key(key_priv_b, ciphertext_pub_key)
     t1 = datetime.now()
 
     print(len(shared_ecc_key))
-    # print(shared_ecc_key2)
+    print(shared_ecc_key2)
     print((t1-t0).total_seconds())
 
-# test()
+get_ecryption_key("bod")

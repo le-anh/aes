@@ -1,7 +1,7 @@
 import csv
 from datetime import datetime
-from lib.file_encrypter import FileEncrypter
-from lib.file_decrypter import FileDecrypter
+from .lib.file_encrypter import FileEncrypter
+from .lib.file_encrypter import FileDecrypter
 
 password = "Security Lab."
 
@@ -39,10 +39,7 @@ def file_enc_dec():
             data_row = [file_name, i+1]
             data_row.append(file_encrypt(file_name))
             data_row.append(file_decrypt(file_name))
-            export_to_csv(data_row)
+            # export_to_csv(data_row)
 
-def run():
-    file_enc_dec()
 
-if __name__ == "__main__":
-    run()
+file_enc_dec()
