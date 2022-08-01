@@ -1,5 +1,7 @@
 import csv
 from datetime import datetime
+
+from numpy import longlong
 from lib.file_encrypter import FileEncrypter
 from lib.file_decrypter import FileDecrypter
 
@@ -38,7 +40,12 @@ def file_enc_dec():
         export_to_csv(data_row)
 
 def run():
-    file_enc_dec()
+    # file_enc_dec()
+
+    key = "abcd1"
+    key_bytes = key.encode('utf-8')
+    key_int = int.from_bytes(key_bytes, byteorder="big", signed=False)
+    print(key_int)
 
 if __name__ == "__main__":
     run()
