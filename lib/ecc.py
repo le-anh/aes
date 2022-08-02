@@ -76,24 +76,40 @@ def decryption_key(priv_key, ciphertext_pub_key):
     shared_ecc_key = Point_Multiplication(priv_key, ciphertext_pub_key)
     return hashlib.sha1(str(shared_ecc_key.x).encode()).digest()[:AES.block_size]
 
+def get_ecnryption_key(user:str):
+    with open("../keys/" + user, 'r') as f:
+        key_public = Point(int(f.readline().strip(), 16), int(f.readline().strip(), 16))
+
+    encrypted_key, ciphertext_pub_key = encryption_key(key_public)
+    return encrypted_key
+
+# def get_decryotion_key():
+
 def test():
-    t0 = datetime.now()
-    # key_priv_a = 1023
-    key_priv_b = 9081
-    # key_pub_a = Point_Multiplication(key_priv_a, G)
-    key_pub_b = Point_Multiplication(key_priv_b, G)
+    encrypted_key = get_ecnryption_key('bod')
+    print(encrypted_key)
 
-    # key_secret_a = Point_Multiplication(key_priv_a, key_pub_b)
-    # key_secret_b = Point_Multiplication(key_priv_b, key_pub_a)
-    # print(key_secret_a.x, key_secret_a.y)
-    # print(key_secret_b.x, key_secret_b.y)
+    # t0 = datetime.now()
+    # # key_priv_a = 1023
+    # key_priv_b = 9081
+    # # key_pub_a = Point_Multiplication(key_priv_a, G)
+    # key_pub_b = Point_Multiplication(key_priv_b, G)
 
-    shared_ecc_key, ciphertext_pub_key = encryption_key(key_pub_b)
-    # shared_ecc_key2 = decryption_key(key_priv_b, ciphertext_pub_key)
-    t1 = datetime.now()
+    # with open("../keys/bod", 'r') as f:
+    #     key_public = Point(int(f.readline().strip(), 16), int(f.readline().strip(), 16))
 
-    print(len(shared_ecc_key))
-    # print(shared_ecc_key2)
-    print((t1-t0).total_seconds())
+    # # key_secret_a = Point_Multiplication(key_priv_a, key_pub_b)
+    # # key_secret_b = Point_Multiplication(key_priv_b, key_pub_a)
+    # # print(key_secret_a.x, key_secret_a.y)
+    # # print(key_secret_b.x, key_secret_b.y)
 
-# test()
+    # shared_ecc_key, ciphertext_pub_key = encryption_key(key_public)
+    # # shared_ecc_key2 = decryption_key(key_priv_b, ciphertext_pub_key)
+    # t1 = datetime.now()
+
+    # print(len(shared_ecc_key))
+    # # print(shared_ecc_key2)
+    # print((t1-t0).total_seconds())
+
+
+test()

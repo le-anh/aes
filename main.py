@@ -41,11 +41,16 @@ def file_enc_dec():
 
 def run():
     # file_enc_dec()
-
-    key = "abcd1"
-    key_bytes = key.encode('utf-8')
-    key_int = int.from_bytes(key_bytes, byteorder="big", signed=False)
-    print(key_int)
+    with open("keys/bod", 'r') as f:
+        # for line in f.readlines():
+        #     print(line.strip())
+        x = int(f.readlines()[0].strip(), 16)
+    
+    print((hex(x)))
+    # key = "abcd1"
+    # key_bytes = key.encode('utf-8')
+    # key_int = int.from_bytes(key_bytes, byteorder="big", signed=False)
+    # print(key_int)
 
 if __name__ == "__main__":
     run()
