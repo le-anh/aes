@@ -1,3 +1,4 @@
+import base64
 import csv
 from datetime import datetime
 
@@ -17,17 +18,17 @@ def file_encrypt(file_name):
     file_encrypter = FileEncrypter()
     file_encrypter.Encrypt("original/" + file_name + ".txt", password)
     file_encrypter.SaveTo("result/enc_" + file_name)
-    enc_time = file_encrypter.GetEncryptedTime()
-    print(f"Encrypt success (file {file_name}: {enc_time} ms)!")
-    return enc_time
+    # enc_time = file_encrypter.GetEncryptedTime()
+    # print(f"Encrypt success (file {file_name}: {enc_time} ms)!")
+    # return enc_time
 
 def file_decrypt(file_name):
     file_decrypter = FileDecrypter()
     file_decrypter.Decrypt("result/enc_" + file_name, password)
     file_decrypter.SaveTo("result/dec_" + file_name +".txt")
-    dec_time = file_decrypter.GeDecryptedTime()
-    print(f"Decrypt success (file {file_name}: {dec_time} ms)!")
-    return dec_time
+    # dec_time = file_decrypter.GeDecryptedTime()
+    # print(f"Decrypt success (file {file_name}: {dec_time} ms)!")
+    # return dec_time
 
 def file_enc_dec():
     for i in range(10):
@@ -41,16 +42,8 @@ def file_enc_dec():
 
 def run():
     # file_enc_dec()
-    with open("keys/bod", 'r') as f:
-        # for line in f.readlines():
-        #     print(line.strip())
-        x = int(f.readlines()[0].strip(), 16)
-    
-    print((hex(x)))
-    # key = "abcd1"
-    # key_bytes = key.encode('utf-8')
-    # key_int = int.from_bytes(key_bytes, byteorder="big", signed=False)
-    # print(key_int)
+    file_decrypt("text")
+    # print(base64.b64decode('D/xyJbidw269A80UV8bj1A=='))
 
 if __name__ == "__main__":
     run()

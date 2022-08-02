@@ -4,11 +4,12 @@ from lib.file_encrypter import FileEncrypter
 from lib.file_decrypter import FileDecrypter
 from lib.ecc import Point
 from lib.ecdh import ECDH
+from memory_profiler import profile
 
-key_priv_A = 99
-key_priv_B = 109
-key_pub_A = Point(0xe607de1ddba0768d63f41fb018ea203a9079cc1713eabd1865c4d89799be0a32, 0x784a0a40580c75923b8591562d5aec0ddd33b2596490d310c90d33d9147f6162)
-key_pub_B = Point(0xa0b429e5d208fc92792874a326993ee60b65883e4d95cf0ac05c7e7da9798e47, 0x92d8149fcdf395ed4f41a665f384c4db218cfb085727c67fe77ee2ebe1d088a7)
+key_priv_A = 0x156ff3c7d9685bed1ad0988052cc0273acd8e0050f8a0fb6c228e9cb532ba4fe
+key_pub_A = Point(0x93dc12bd0ae2db5790795852eeeefeb6bcea2f38d3013314c17d72b1d7257f6d, 0xf9125b136ff2b3b85d96ab6ea42f59d2ba7b7a6805d538b49eae1520b32d04f)
+ciphertext_pub_key = ''
+
 
 def export_to_csv(data_row = ''):
     data_row = [datetime.now()] + data_row
@@ -17,32 +18,41 @@ def export_to_csv(data_row = ''):
         writer.writerow(data_row)
 
 def file_encrypt(file_name):
-    key_secret_encrypt = ECDH().get_key_secret(key_priv_A, key_pub_B)
-    file_encrypter = FileEncrypter()
-    file_encrypter.Encrypt("original/" + file_name + ".txt", key_secret_encrypt)
-    file_encrypter.SaveTo("result/enc_" + file_name)
-    enc_time = file_encrypter.GetEncryptedTime()
-    print(f"Encrypt success (file {file_name}: {enc_time} ms)!")
-    return enc_time
+    key_secret_encrypt, ciphertext_pub_key = ECDH().get_encryption_key(key_pub_A)
+    print(f"key_secret_encrypt: ({key_secret_encrypt.x}, {key_secret_encrypt.y})")
+    print(f"ciphertext_pub_key: ({ciphertext_pub_key.x}, {ciphertext_pub_key.y})")
+
+    # file_encrypter = FileEncrypter()
+    # # t0 = datetime.now()
+    # file_encrypter.Encrypt("original/" + file_name + ".txt", key_secret_encrypt)
+    # # t1 = datetime.now()
+    # file_encrypter.SaveTo("result/enc_" + file_name)
+    # # enc_time = (t1-t0).total_seconds()*1000.0
+    # print(f"Encrypt success (file {file_name})!")
+    # # return enc_time
 
 def file_decrypt(file_name):
-    key_secret_decrypt = ECDH().get_key_secret(key_priv_B, key_pub_A)
-    file_decrypter = FileDecrypter()
-    file_decrypter.Decrypt("result/enc_" + file_name, key_secret_decrypt)
-    file_decrypter.SaveTo("result/dec_" + file_name +".txt")
-    dec_time = file_decrypter.GeDecryptedTime()
-    print(f"Decrypt success (file {file_name}: {dec_time} ms)!")
-    return dec_time
+    print(f"ciphertext_pub_key: ({ciphertext_pub_key.x}, {ciphertext_pub_key.y})")
+    key_secret_decrypt = ECDH().get_decryption_key(key_priv_A, ciphertext_pub_key)
+    print(f"key_secret_decrypt: ({key_secret_decrypt.x}, {key_secret_decrypt.y})")
+    # file_decrypter = FileDecrypter()
+    # # t0 = datetime.now()
+    # file_decrypter.Decrypt("result/enc_" + file_name, key_secret_decrypt)
+    # # t1 = datetime.now()
+    # file_decrypter.SaveTo("result/dec_" + file_name +".txt")
+    # # dec_time = (t1-t0).total_seconds()*1000.0
+    # print(f"Decrypt success (file {file_name})!")
+    # # return dec_time
 
 def file_enc_dec():
-    for fn in range(8):
-        for i in range(10):
-            print(f"Iterating: {i+1}")
+    for fn in range(1):
+        for i in range(1):
             data_row = [fn+1, i+1]
             file_name = str(fn+1)
+            print(f"File: {file_name} - Iterating: {i+1}")
             data_row.append(file_encrypt(file_name))
             data_row.append(file_decrypt(file_name))
-            export_to_csv(data_row)
+            # export_to_csv(data_row)
 
 def run():
     file_enc_dec()
