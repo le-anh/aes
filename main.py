@@ -43,7 +43,6 @@ def file_enc_dec():
 def run():
     # file_enc_dec()
     file_decrypt("text")
-    # print(base64.b64decode('D/xyJbidw269A80UV8bj1A=='))
 
 if __name__ == "__main__":
     run()

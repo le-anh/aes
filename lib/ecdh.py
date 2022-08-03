@@ -26,5 +26,8 @@ class ECDH:
         shared_ecc_key = ECC().Point_Multiplication(priv_key, ciphertext_pub_key)
         return shared_ecc_key
     
+    def point_to_bytes_key(self, point):
+        return hashlib.sha1(str(point.x).encode()).digest()[:AES.block_size]
+    
     def compress_point(self, point):
         return hex(point.x) + hex(point.y % 2)[2:]
