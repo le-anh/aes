@@ -1,11 +1,9 @@
-from datetime import datetime
 from typing import List, Optional, Union
 from .key_generator import KeyGenerator
 from .file_reader import FileReader
 from .file_writer import FileWriter
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
-from memory_profiler import profile
 
 class FileEncrypter:
     date_encrypted: bytes
@@ -15,7 +13,6 @@ class FileEncrypter:
         self.date_encrypted = b""
         self.iv = b""
     
-    @profile
     def Encrypt(self, file_in: str, passwords: List[Union[str, bytes]], salt: Optional[Union[str, bytes]] = None, itr_num: Optional[int] = None)->None:
         # Generate key
         key_generator = KeyGenerator(passwords, salt, itr_num)
