@@ -24,7 +24,7 @@ def file_encrypt(file_name):
     return enc_time
 
 def file_decrypt(file_name):
-    file_decrypter = FileDecrypter(key_priv_A)
+    file_decrypter = FileDecrypter(key_priv_A, "result/enc_" + file_name + ".key")
     t0 = datetime.now()
     file_decrypter.Decrypt("result/enc_" + file_name)
     t1 = datetime.now()
@@ -34,18 +34,17 @@ def file_decrypt(file_name):
     return dec_time
 
 def file_enc_dec():
-    for fn in range(1):
-        for i in range(1):
+    for fn in range(8):
+        for i in range(10):
             data_row = [fn+1, i+1]
             file_name = str(fn+1)
             print(f"File: {file_name} - Iterating: {i+1}")
             data_row.append(file_encrypt(file_name))
             data_row.append(file_decrypt(file_name))
-            # export_to_csv(data_row)
+            export_to_csv(data_row)
 
 def run():
-    file_encrypt("text")
-    file_decrypt("text")
+    file_enc_dec()
 
 if __name__ == "__main__":
     run()
