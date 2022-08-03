@@ -2,5 +2,7 @@
 !result/*.*
 !original/
 !original/*.*
+!lib/__pycache__/
+!lib/__pycache__/*.*
 result/*.csv
 result/log.txt
