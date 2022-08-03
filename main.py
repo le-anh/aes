@@ -36,7 +36,7 @@ def file_decrypt(file_name):
 def file_enc_dec():
     for fn in range(8):
         file_name = str(fn+1)
-        for i in range(1):
+        for i in range(10):
             print(f"File: {file_name} - Iterating: {i+1}")
             data_row = [fn+1, i+1]
             data_row.append(file_encrypt(file_name))
