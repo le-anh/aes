@@ -2,7 +2,6 @@ import csv
 from datetime import datetime
 from lib.file_encrypter import FileEncrypter
 from lib.file_decrypter import FileDecrypter
-from memory_profiler import profile
 
 password = "Security Lab."
 
