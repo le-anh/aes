@@ -3,7 +3,7 @@ from .pbkdf2_sha512 import Pbkdf2Sha512
 from .aes_const import AesConst
 
 class KeyGeneratorConst:
-    DEF_ITR_NUM: int = 1024 * 512
+    DEF_ITR_NUM: int = 1024 * 512   # it is recommended to use at least 1000000 (1 million) iterations. (https://pycryptodome.readthedocs.io/en/latest/src/protocol/kdf.html)
     DEF_SALT: bytes = b"[]=?Aes_CiPhEr<>()"
 
 class KeyGenerator:
