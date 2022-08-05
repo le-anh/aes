@@ -77,11 +77,3 @@ class ECC:
             if(int(i)):
                 T = self.__Point_Add(T, Q)
         return T
-    
-    # def get_key_public(self, key_priv: int)->Point:
-    #     key_public = self.__Point_Multiplication(key_priv, self.G)
-    #     return key_public
-    
-    # def get_key_secret(self, key_priv:int, key_pub: Point)->Point:
-    #     key_secret = self.__Point_Multiplication(key_priv, key_pub)
-    #     return key_secret
