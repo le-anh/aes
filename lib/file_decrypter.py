@@ -21,6 +21,7 @@ class FileDecrypter:
         self.priv_key = priv_key
         if file_key:
             with open(file_key, "r") as f:
+                f.readline()
                 self.ciphertext_pub_key = Point(int(f.readline(), 16), int(f.readline(), 16))
                 secret_decrypt = ECDH().get_decryption_key(self.priv_key, self.ciphertext_pub_key)
                 self.key_secret_decrypt = ECDH().point_to_bytes_key(secret_decrypt)

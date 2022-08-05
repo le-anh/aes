@@ -1,3 +1,4 @@
+import base64
 from typing import Any, List, Optional, Union
 from .ecc import Point
 from .ecdh import ECDH
@@ -37,5 +38,7 @@ class FileEncrypter:
 
     def __Save_Key_File(self, file_name):
         with open(file_name + ".key", 'w') as f:
+            f.write("-----BEGIN KEY REQUEST-----\n")
             f.write(str(hex(self.ciphertext_pub_key.x))[2:] + "\n")
-            f.write(str(hex(self.ciphertext_pub_key.y))[2:])
+            f.write(str(hex(self.ciphertext_pub_key.y))[2:] + "\n")
+            f.write("-----END KEY REQUEST-----")
