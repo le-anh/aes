@@ -18,7 +18,7 @@ def file_encrypt(file_name):
     t1 = datetime.now()
     file_encrypter.SaveTo("result/enc_" + file_name)
     enc_time = (t1-t0).total_seconds()*1000.0
-    print(f"Encrypt success (file {file_name}: {enc_time} ms)!")
+    # print(f"Encrypt success (file {file_name}: {enc_time} ms)!")
     return enc_time
 
 def file_decrypt(file_name):
@@ -34,7 +34,7 @@ def file_decrypt(file_name):
 def file_enc_dec():
     for fn in range(8):
         file_name = str(fn+1)
-        for i in range(10):
+        for i in range(2):
             print(f"File: {fn+1} - Iterating: {i+1}")
             data_row = [file_name, i+1]
             data_row.append(file_encrypt(file_name))
