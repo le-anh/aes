@@ -2,11 +2,9 @@ import csv
 from datetime import datetime
 from lib.file_encrypter import FileEncrypter
 from lib.file_decrypter import FileDecrypter
-from lib.ecc import Point
 from lib.ecdh import ECDH
 
 key_priv_A = 0x156ff3c7d9685bed1ad0988052cc0273acd8e0050f8a0fb6c228e9cb532ba4fe
-# key_pub_A = Point(0x93dc12bd0ae2db5790795852eeeefeb6bcea2f38d3013314c17d72b1d7257f6d, 0xf9125b136ff2b3b85d96ab6ea42f59d2ba7b7a6805d538b49eae1520b32d04f)
 key_pub_A = ECDH().get_key_public(key_priv_A)
 
 def export_to_csv(data_row = ''):
@@ -38,12 +36,12 @@ def file_decrypt(file_name):
 def file_enc_dec():
     for fn in range(8):
         file_name = str(fn+1)
-        for i in range(10):
+        for i in range(1):
             print(f"File: {file_name} - Iterating: {i+1}")
             data_row = [fn+1, i+1]
             data_row.append(file_encrypt(file_name))
             data_row.append(file_decrypt(file_name))
-            export_to_csv(data_row)
+            # export_to_csv(data_row)
 
 def run():
     file_enc_dec()

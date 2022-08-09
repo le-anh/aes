@@ -20,7 +20,7 @@ class FileEncrypter:
             key_secret_encrypt, self.ciphertext_pub_key = ECDH().get_encryption_key(key_public)
             self.key_secret_encrypt = ECDH().point_to_bytes_key(key_secret_encrypt)
 
-    def Encrypt(self, file_in: str, passwords: Optional[List[Union[str, bytes]]] = None, salt: Optional[Union[str, bytes]] = None, itr_num: Optional[int] = None)->None:
+    def Encrypt(self, file_in: str)->None:
         file_data = FileReader.Read(file_in)   # Read file
         encrypter = AES.new(self.key_secret_encrypt, AES.MODE_CBC)    # Encrypt it
         self.data_encrypted = encrypter.encrypt(pad(file_data, AES.block_size))

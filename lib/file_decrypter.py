@@ -26,7 +26,7 @@ class FileDecrypter:
                 secret_decrypt = ECDH().get_decryption_key(self.priv_key, self.ciphertext_pub_key)
                 self.key_secret_decrypt = ECDH().point_to_bytes_key(secret_decrypt)
     
-    def Decrypt(self, file_in: str, passwords: Optional[List[Union[str, bytes]]] = None, salt: Optional[Union[str, bytes]] = None, itr_num: Optional[int] = None)->None:
+    def Decrypt(self, file_in: str)->None:
         try:
             file_data = FileReader.Read(file_in)    # Read file
             self.iv = file_data[-self.iv_size:]
