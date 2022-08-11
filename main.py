@@ -41,7 +41,7 @@ def file_enc_dec():
             data_row = [fn+1, i+1]
             data_row.append(file_encrypt(file_name))
             data_row.append(file_decrypt(file_name))
-            # export_to_csv(data_row)
+            export_to_csv(data_row)
 
 def run():
     file_enc_dec()

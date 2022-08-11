@@ -1,5 +1,4 @@
-import base64
-from typing import Any, List, Optional, Union
+from typing import Any, Optional
 from .ecc import Point
 from .ecdh import ECDH
 from .file_reader import FileReader
@@ -19,7 +18,7 @@ class FileEncrypter:
         if key_public:
             key_secret_encrypt, self.ciphertext_pub_key = ECDH().get_encryption_key(key_public)
             self.key_secret_encrypt = ECDH().point_to_bytes_key(key_secret_encrypt)
-
+    
     def Encrypt(self, file_in: str)->None:
         file_data = FileReader.Read(file_in)   # Read file
         encrypter = AES.new(self.key_secret_encrypt, AES.MODE_CBC)    # Encrypt it
