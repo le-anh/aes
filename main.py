@@ -16,7 +16,7 @@ def export_to_csv(data_row = ''):
 def file_encrypt(file_name):
     file_encrypter = FileEncrypter(key_pub_A)
     t0 = datetime.now()
-    file_encrypter.Encrypt("original/" + file_name + ".txt")
+    file_encrypter.Encrypt("original/32+32/" + file_name + ".txt")
     t1 = datetime.now()
     file_encrypter.SaveTo("result/enc_" + file_name)
     enc_time = (t1-t0).total_seconds()*1000.0
@@ -34,9 +34,9 @@ def file_decrypt(file_name):
     return dec_time
 
 def file_enc_dec():
-    for fn in range(8):
+    for fn in range(20):
         file_name = str(fn+1)
-        for i in range(1):
+        for i in range(10):
             print(f"File: {file_name} - Iterating: {i+1}")
             data_row = [fn+1, i+1]
             data_row.append(file_encrypt(file_name))
