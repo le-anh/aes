@@ -25,6 +25,7 @@ class FileDecrypter:
                 self.ciphertext_pub_key = Point(int(f.readline(), 16), int(f.readline(), 16))
                 secret_decrypt = ECDH().get_decryption_key(self.priv_key, self.ciphertext_pub_key)
                 self.key_secret_decrypt = ECDH().point_to_bytes_key(secret_decrypt)
+                print(f"Decrypt key: {self.key_secret_decrypt}")
     
     def Decrypt(self, file_in: str)->None:
         try:
@@ -33,6 +34,8 @@ class FileDecrypter:
             file_data = file_data[:len(file_data)-self.iv_size]
             decrypter = AES.new(self.key_secret_decrypt, AES.MODE_CBC, self.iv)   # Decrypt it
             self.data_encrypted = unpad(decrypter.decrypt(file_data), AES.block_size)
+            print(f"File data was decrypted.")
+
         except(ValueError, KeyError):
             print("Incorrect decryption")
     
@@ -41,3 +44,4 @@ class FileDecrypter:
     
     def SaveTo(self, file_out: str)->None:
         FileWriter.Write(file_out, self.data_encrypted.decode())
+        print(f"Decrypted data was stored.")

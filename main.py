@@ -16,11 +16,10 @@ def export_to_csv(data_row = ''):
 def file_encrypt(file_name):
     file_encrypter = FileEncrypter(key_pub_A)
     t0 = datetime.now()
-    file_encrypter.Encrypt("original/32+32/" + file_name + ".txt")
+    file_encrypter.Encrypt("original/" + file_name + ".txt")
     t1 = datetime.now()
     file_encrypter.SaveTo("result/enc_" + file_name)
     enc_time = (t1-t0).total_seconds()*1000.0
-    print(f"Encrypt success (file {file_name}): {enc_time} ms!")
     return enc_time
 
 def file_decrypt(file_name):
@@ -30,7 +29,6 @@ def file_decrypt(file_name):
     t1 = datetime.now()
     file_decrypter.SaveTo("result/dec_" + file_name +".txt")
     dec_time = (t1-t0).total_seconds()*1000.0
-    print(f"Decrypt success (file {file_name}) {dec_time} ms!")
     return dec_time
 
 def file_enc_dec():
@@ -44,7 +42,10 @@ def file_enc_dec():
             export_to_csv(data_row)
 
 def run():
-    file_enc_dec()
+    print(f'Public key: {ECDH().point_to_bytes_key(key_pub_A)}')
+    file_encrypt("text")
+    print('==============================================================================================')
+    file_decrypt("text")
 
 if __name__ == "__main__":
     run()
