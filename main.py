@@ -15,7 +15,7 @@ def export_to_csv(data_row = ''):
 def file_encrypt(file_name):
     file_encrypter = FileEncrypter()
     t0 = datetime.now()
-    file_encrypter.Encrypt("original/32+32/" + file_name + ".txt", password)
+    file_encrypter.Encrypt("original/+32/" + file_name + ".txt", password)
     t1 = datetime.now()
     file_encrypter.SaveTo("result/enc_" + file_name)
     enc_time = (t1-t0).total_seconds()*1000.0
