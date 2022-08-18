@@ -19,12 +19,12 @@ class ECDH:
     def get_encryption_key(self, pub_key):
         ciphertext_priv_key = randint(2, EccConst.N-1)
         ciphertext_pub_key = ECC().Point_Multiplication(ciphertext_priv_key, EccConst.G)
-        shared_ecc_key = ECC().Point_Multiplication(ciphertext_priv_key, pub_key)
-        return shared_ecc_key, ciphertext_pub_key
+        encrypt_key = ECC().Point_Multiplication(ciphertext_priv_key, pub_key)
+        return encrypt_key, ciphertext_pub_key
 
     def get_decryption_key(self, priv_key, ciphertext_pub_key):
-        shared_ecc_key = ECC().Point_Multiplication(priv_key, ciphertext_pub_key)
-        return shared_ecc_key
+        decrypt_key = ECC().Point_Multiplication(priv_key, ciphertext_pub_key)
+        return decrypt_key
     
     def point_to_bytes_key(self, point):
         return hashlib.sha1(str(point.x).encode()).digest()[:AES.block_size]

@@ -1,10 +1,10 @@
-from typing import List, Optional, Union
+from typing import Optional
 from .ecc import Point
 from .ecdh import ECDH
 from .file_reader import FileReader
 from .file_writer import FileWriter
-from Crypto.Util.Padding import unpad
 from Crypto.Cipher import AES
+from Crypto.Util.Padding import unpad
 
 class FileDecrypter:
     data_encrypted: bytes
