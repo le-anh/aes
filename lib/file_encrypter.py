@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import List, Optional, Union
 from .key_generator import KeyGenerator
 from .file_reader import FileReader
@@ -15,11 +14,8 @@ class FileEncrypter:
         self.iv = b""
     
     def Encrypt(self, file_in: str, passwords: List[Union[str, bytes]], salt: Optional[Union[str, bytes]] = None, itr_num: Optional[int] = None)->None:
-        # Generate key
         key_generator = KeyGenerator(passwords, salt, itr_num)
-        # Read file
         file_data = FileReader.Read(file_in)
-        # Encrypt it
         encrypter = AES.new(key_generator.GetMasterKey(), AES.MODE_CBC)
         self.date_encrypted = encrypter.encrypt(pad(file_data, AES.block_size))
         self.iv = encrypter.iv
