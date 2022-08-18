@@ -18,11 +18,11 @@ class ECDH:
 
     def get_encryption_key(self, pub_key):
         ciphertext_priv_key = randint(2, EccConst.N-1)
-        ciphertex_pub_key = ECC().Point_Multiplication(ciphertext_priv_key, EccConst.G)
+        ciphertext_pub_key = ECC().Point_Multiplication(ciphertext_priv_key, EccConst.G)
         shared_ecc_key = ECC().Point_Multiplication(ciphertext_priv_key, pub_key)
-        return shared_ecc_key, ciphertex_pub_key
+        return shared_ecc_key, ciphertext_pub_key
 
-    def get_decryption_key(slef, priv_key, ciphertext_pub_key):
+    def get_decryption_key(self, priv_key, ciphertext_pub_key):
         shared_ecc_key = ECC().Point_Multiplication(priv_key, ciphertext_pub_key)
         return shared_ecc_key
     
