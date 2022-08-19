@@ -2,7 +2,7 @@ from .ecc import Point
 from .ecdh import ECDH
 from .file_reader import FileReader
 from .file_writer import FileWriter
-from .initial import AesConst
+from .initial_const import AesConst
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
 

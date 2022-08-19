@@ -1,4 +1,4 @@
-from .initial import EccConst, Point
+from .initial_const import EccConst, Point
 
 class ECC:
     def __init__(self) -> None:
