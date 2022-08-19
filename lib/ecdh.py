@@ -2,7 +2,7 @@ import hashlib
 from random import randint
 from typing import Tuple
 from .ecc import ECC
-from .parameter_initial import EccConst, AesConst, Point
+from .initial import EccConst, AesConst, Point
 
 class ECDH:
     def __init__(self) -> None:
