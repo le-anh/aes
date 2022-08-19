@@ -4,7 +4,7 @@ from typing import Union
 class Utils:
 
     @staticmethod
-    def Decode(data: Union[str, bytes], encoding: str = "utf-8") -> str:
+    def Decode(data: Union[str, bytes], encoding: str = "utf-8")->str:
         if isinstance(data, str):
             dec = data
         elif isinstance(data, bytes):
@@ -14,7 +14,7 @@ class Utils:
         return dec
 
     @staticmethod
-    def Encode(data: Union[str, bytes], encoding: str = "utf-8") -> bytes:
+    def Encode(data: Union[str, bytes], encoding: str = "utf-8")->bytes:
         if isinstance(data, str):
             enc = data.encode(encoding)
         elif isinstance(data, bytes):
@@ -24,7 +24,7 @@ class Utils:
         return enc
 
     @staticmethod
-    def DataToString(data: Union[str, bytes]) -> str:
+    def DataToString(data: Union[str, bytes])->str:
         if isinstance(data, str):
             st = data
         elif isinstance(data, bytes):
@@ -34,5 +34,5 @@ class Utils:
         return st
 
     @staticmethod
-    def BytesToHexStr(data: bytes) -> str:
+    def BytesToHexStr(data: bytes)->str:
         return Utils.Decode(binascii.hexlify(data))

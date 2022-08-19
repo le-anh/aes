@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 from .ecc import Point
 from .ecdh import ECDH
 from .file_reader import FileReader
@@ -12,7 +12,7 @@ class FileEncrypter:
     key_secret_encrypt: bytes
     ciphertext_pub_key: Point
 
-    def __init__(self, key_public: Optional[int]) -> None:
+    def __init__(self, key_public: int = None) -> None:
         self.data_encrypted = b""
         self.iv = b""
         if key_public:
@@ -21,25 +21,25 @@ class FileEncrypter:
             print(f"Cyphertext public key: {ECDH().point_to_bytes_key(self.ciphertext_pub_key)}")
             print(f"Encrypt key: {self.key_secret_encrypt}")
     
-    def Encrypt(self, file_in: str)->None:
+    def Encrypt(self, file_in: str) -> None:
         file_data = FileReader.Read(file_in)   # Read file
         encrypter = AES.new(self.key_secret_encrypt, AES.MODE_CBC)    # Encrypt it
         self.data_encrypted = encrypter.encrypt(pad(file_data, AES.block_size))
         self.iv = encrypter.iv
         print("File data was encrypted.")
     
-    def GetEncryptedData(self)->bytes:
+    def GetEncryptedData(self) -> bytes:
         return self.data_encrypted
 
-    def GetIV(self)->bytes:
+    def GetIV(self) -> bytes:
         return self.iv
     
-    def SaveTo(self, file_out: str)->None:
+    def SaveTo(self, file_out: str) -> None:
         FileWriter.Write(file_out, b''.join([self.data_encrypted, self.iv]), 'wb')
         self.__Save_Key_File(file_out)
         print("Encrypted data was stored.")
 
-    def __Save_Key_File(self, file_name):
+    def __Save_Key_File(self, file_name: str) -> None:
         with open(file_name + ".key", 'w') as f:
             f.write("-----BEGIN KEY REQUEST-----\n")
             f.write(str(hex(self.ciphertext_pub_key.x))[2:] + "\n")
