@@ -7,13 +7,13 @@ pub_key = ECDH().get_public_key(priv_key)
 
 def file_encrypt(file_name: str)->None:
     file_encrypter = FileEncrypter(pub_key)
-    file_encrypter.Encrypt("original/" + file_name + ".txt")
-    file_encrypter.SaveTo("result/enc_" + file_name)
+    file_encrypter.Encrypt(file_name + ".txt")
+    file_encrypter.SaveTo(file_name + ".bin")
 
 def file_decrypt(file_name: str)->None:
-    file_decrypter = FileDecrypter(priv_key, "result/enc_" + file_name + ".key")
-    file_decrypter.Decrypt("result/enc_" + file_name)
-    file_decrypter.SaveTo("result/dec_" + file_name +".txt")
+    file_decrypter = FileDecrypter(priv_key, file_name)
+    file_decrypter.Decrypt(file_name + ".bin")
+    file_decrypter.SaveTo(file_name + ".txt")
 
 def run():
     print(f'Public key: {ECDH().point_to_bytes_key(pub_key)}')

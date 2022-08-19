@@ -15,7 +15,7 @@ class ECDH:
     
     def get_key_secret(self, key_priv: int, key_pub: Point) -> Point:
         key_secret = ECC().Point_Multiplication(key_priv, key_pub)
-        return hashlib.sha1(str(key_secret.x).encode()).digest()[:AesConst.BlockSize()]
+        return hashlib.sha256(str(key_secret.x).encode()).digest()[:AesConst.KeySize()]
 
     def get_encryption_key(self, pub_key: Point) -> Tuple[Point, Point]:
         ciphertext_priv_key = randint(2, EccConst.N-1)
@@ -28,4 +28,4 @@ class ECDH:
         return decrypt_key
     
     def point_to_bytes_key(self, point: Point) -> hex:
-        return hashlib.sha1(str(point.x).encode()).digest()[:AesConst.BlockSize()]
+        return hashlib.sha256(str(point.x).encode() + str(point.y).encode()).digest()[:AesConst.KeySize()]

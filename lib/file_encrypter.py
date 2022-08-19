@@ -1,4 +1,3 @@
-from typing import Any
 from .ecc import Point
 from .ecdh import ECDH
 from .file_reader import FileReader
@@ -7,40 +6,40 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 
 class FileEncrypter:
-    data_encrypted: Any
+    encrypted_data: bytes
     iv: bytes
-    key_secret_encrypt: bytes
+    encrypt_key: bytes
     ciphertext_pub_key: Point
 
     def __init__(self, key_public: int = None) -> None:
         self.data_encrypted = b""
         self.iv = b""
         if key_public:
-            key_secret_encrypt, self.ciphertext_pub_key = ECDH().get_encryption_key(key_public)
-            self.key_secret_encrypt = ECDH().point_to_bytes_key(key_secret_encrypt)
+            encrypt_key, self.ciphertext_pub_key = ECDH().get_encryption_key(key_public)
+            self.encrypt_key = ECDH().point_to_bytes_key(encrypt_key)
             print(f"Cyphertext public key: {ECDH().point_to_bytes_key(self.ciphertext_pub_key)}")
-            print(f"Encrypt key: {self.key_secret_encrypt}")
+            print(f"Encrypt key: {self.encrypt_key}")
     
     def Encrypt(self, file_in: str) -> None:
-        file_data = FileReader.Read(file_in)   # Read file
-        encrypter = AES.new(self.key_secret_encrypt, AES.MODE_CBC)    # Encrypt it
-        self.data_encrypted = encrypter.encrypt(pad(file_data, AES.block_size))
+        file_data = FileReader.Read("original/" + file_in)   # Read file
+        encrypter = AES.new(self.encrypt_key, AES.MODE_CBC)    # Encrypt it
+        self.encrypted_data = encrypter.encrypt(pad(file_data, AES.block_size))
         self.iv = encrypter.iv
         print("File data was encrypted.")
     
     def GetEncryptedData(self) -> bytes:
-        return self.data_encrypted
+        return self.encrypted_data
 
     def GetIV(self) -> bytes:
         return self.iv
     
     def SaveTo(self, file_out: str) -> None:
-        FileWriter.Write(file_out, b''.join([self.data_encrypted, self.iv]), 'wb')
+        FileWriter.Write("result/enc_" + file_out, b''.join([self.encrypted_data, self.iv]), 'wb')
         self.__Save_Key_File(file_out)
         print("Encrypted data was stored.")
 
     def __Save_Key_File(self, file_name: str) -> None:
-        with open(file_name + ".key", 'w') as f:
+        with open("result/key/" + file_name[:-3] + "key", 'w') as f:
             f.write("-----BEGIN KEY REQUEST-----\n")
             f.write(str(hex(self.ciphertext_pub_key.x))[2:] + "\n")
             f.write(str(hex(self.ciphertext_pub_key.y))[2:] + "\n")
