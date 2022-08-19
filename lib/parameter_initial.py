@@ -16,17 +16,17 @@ class EccConst:
 
 class AesConst:
     @staticmethod
-    def BlockSize()->int:
+    def block_size()->int:
         return AES.block_size
 
     @staticmethod
-    def PadSize()->int:
-        return AesConst.BlockSize()
+    def pad_size()->int:
+        return AesConst.block_size()
 
     @staticmethod
-    def KeySize()->int:
-        return AesConst.BlockSize() * 2
+    def key_size()->int:
+        return AesConst.block_size() * 2
     
     @staticmethod
-    def IVSize()->int:
-        return AesConst.BlockSize()
+    def iv_size()->int:
+        return AesConst.block_size()
