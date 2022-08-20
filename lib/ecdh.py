@@ -2,14 +2,14 @@ import hashlib
 from random import randint
 from typing import Tuple
 from .ecc import ECC
-from .initial_const import EccConst, AesConst, Point
+from .const import EccConst, AesConst, Point
 
 class ECDH:
     def __init__(self) -> None:
         pass
 
     def get_public_key(self, priv_key: int) -> Point:
-        pub_key = ECC().point_multiplication(priv_key)
+        pub_key = ECC().point_multiplication(priv_key, EccConst.G)
         return pub_key
     
     def get_encryption_key(self, pub_key: Point) -> Tuple[Point, Point]:
