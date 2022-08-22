@@ -17,7 +17,7 @@ class FileEncrypter:
         if pub_key:
             encrypt_key, self.cipher_pub_key = ECDH().get_encryption_key(pub_key)
             self.encrypt_key = ECDH().point_to_bytes_key(encrypt_key)
-            print(f"Cyphertext public key: {ECDH().point_to_bytes_key(self.cipher_pub_key)}")
+            print(f"Cipher public key: {ECDH().point_to_bytes_key(self.cipher_pub_key)}")
             print(f"Encrypt key: {self.encrypt_key}")
     
     def encrypt(self, file_in: str) -> None:
@@ -36,7 +36,7 @@ class FileEncrypter:
     def save_to(self, file_out: str) -> None:
         FileWriter.write("result/enc_" + file_out, b''.join([self.get_encrypted_data(), self.get_iv()]), 'wb')
         self.save_file_key(file_out)
-        print("Encrypted data was stored.")
+        print("Encrypted data was saved.")
 
     def save_file_key(self, file_name: str) -> None:
         with open("result/key/" + file_name[:-3] + "key", 'w') as f:
