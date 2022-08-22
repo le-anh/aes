@@ -34,9 +34,12 @@ class FileEncrypter:
         return self.iv
     
     def save_to(self, file_out: str) -> None:
-        FileWriter.write("result/enc_" + file_out, b''.join([self.get_encrypted_data(), self.get_iv()]), 'wb')
-        self.save_file_key(file_out)
-        print("Encrypted data was saved.")
+        if self.get_encrypted_data():
+            FileWriter.write("result/enc_" + file_out, b''.join([self.get_encrypted_data(), self.get_iv()]), 'wb')
+            self.save_file_key(file_out)
+            print("Encrypted data was saved.")
+        else:
+            print("Encrypted data empty.")
 
     def save_file_key(self, file_name: str) -> None:
         with open("result/key/" + file_name[:-3] + "key", 'w') as f:

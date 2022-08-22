@@ -34,5 +34,8 @@ class FileDecrypter:
         return self.decrypted_data
     
     def save_to(self, file_out: str) -> None:
-        FileWriter.write("result/dec_" + file_out, self.get_decrypted_data().decode())
-        print(f"Decrypted data was saved.")
+        if self.get_decrypted_data():
+            FileWriter.write("result/dec_" + file_out, self.get_decrypted_data().decode())
+            print(f"Decrypted data was saved.")
+        else:
+            print(f"Decrypted data empty.")
