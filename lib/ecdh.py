@@ -22,5 +22,9 @@ class ECDH:
         decrypt_key = ECC().point_multiplication(priv_key, cipher_pub_key)
         return decrypt_key
     
+    def get_cmac_key(self, priv_key: int, pub_key: Point) -> Point:
+        cmac_key = ECC().point_multiplication(priv_key, pub_key)
+        return cmac_key
+
     def point_to_bytes_key(self, point: Point) -> bytes:
         return hashlib.sha256(str(point.x).encode() + str(point.y).encode()).digest()[:AesConst.key_size()]

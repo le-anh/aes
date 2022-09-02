@@ -3,6 +3,7 @@ from .file_reader import FileReader
 from .file_writer import FileWriter
 from .const import AesConst, Point
 from Crypto.Cipher import AES
+from Crypto.Hash import CMAC
 from Crypto.Util.Padding import pad
 
 class FileEncrypter:
@@ -11,7 +12,7 @@ class FileEncrypter:
     encrypt_key: bytes
     cipher_pub_key: Point
 
-    def __init__(self, pub_key: int = None) -> None:
+    def __init__(self, pub_key: Point = None) -> None:
         self.encrypted_data = b""
         self.iv = b""
         if pub_key:
@@ -32,10 +33,18 @@ class FileEncrypter:
 
     def get_iv(self) -> bytes:
         return self.iv
+
+    def get_tag(self, send_priv_key: int, receive_pub_key: Point) -> bytes:
+        cmac_key = ECDH().point_to_bytes_key(ECDH().get_cmac_key(send_priv_key, receive_pub_key))
+        tag = CMAC.new(cmac_key, msg=self.get_encrypted_data(), ciphermod=AES)
+        return tag.digest()
     
-    def save_to(self, file_out: str) -> None:
+    def save_to(self, file_out: str, send_priv_key: int, receive_pub_key: Point) -> None:
+        print(20*'=' + "Encryption" + 20*'=')
+        print(f'iv: {self.get_iv()}')
+        print(f'tag: {self.get_tag(send_priv_key, receive_pub_key)}')
         if self.get_encrypted_data():
-            FileWriter.write("result/enc_" + file_out, b''.join([self.get_encrypted_data(), self.get_iv()]), 'wb')
+            FileWriter.write("result/enc_" + file_out, b''.join([self.get_encrypted_data(), self.get_iv(), self.get_tag(send_priv_key, receive_pub_key)]), 'wb')
             self.save_file_key(file_out)
             print("Encrypted data was saved.")
         else:
