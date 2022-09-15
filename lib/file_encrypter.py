@@ -2,6 +2,7 @@ from .ecdh import ECDH
 from .file_reader import FileReader
 from .file_writer import FileWriter
 from .const import AesConst, Point
+from .kdf import Pbkdf2
 from Crypto.Cipher import AES
 from Crypto.Hash import CMAC
 from Crypto.Util.Padding import pad
@@ -11,13 +12,17 @@ class FileEncrypter:
     iv: bytes
     encrypt_key: bytes
     cipher_pub_key: Point
+    kdf_key: bytes
 
     def __init__(self, pub_key: Point = None) -> None:
         self.encrypted_data = b""
         self.iv = b""
+        self.kdf_key = b""
         if pub_key:
             encrypt_key, self.cipher_pub_key = ECDH().get_encryption_key(pub_key)
             self.encrypt_key = ECDH().point_to_bytes_key(encrypt_key)
+            # self.kdf_key = Pbkdf2.Compute(self.encrypt_key)
+            # print(f'kdf key (encryption): {self.kdf_key}')
             print(f"Cipher public key: {ECDH().point_to_bytes_key(self.cipher_pub_key)}")
             print(f"Encrypt key: {self.encrypt_key}")
     
